@@ -1,0 +1,247 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nofire-client
+  namespace: kube-system
+  labels:
+    app: nofire-client
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: nofire-client
+  template:
+    metadata:
+      labels:
+        app: nofire-client
+    spec:
+      serviceAccountName: nofire-client
+      restartPolicy: Always
+      containers:
+      - name: client  
+        image: nofire-client:latest
+        imagePullPolicy: IfNotPresent
+        command: ["/nofire-client"]
+        args: ["--config", "/etc/client/config.json"]
+        env:
+        - name: NODE_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: spec.nodeName
+        - name: PORT
+          value: "8080"
+        resources:
+          limits:
+            cpu: 200m
+            memory: 256Mi
+          requests:
+            cpu: 100m
+            memory: 128Mi
+        ports:
+        - containerPort: 8080
+          name: http
+        volumeMounts:
+        - name: client-config
+          mountPath: /etc/client
+          readOnly: true
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: 8080
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /healthz
+            port: 8080
+          initialDelaySeconds: 5
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+      volumes:
+      - name: client-config
+        configMap:
+          name: nofire-client-config
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: nofire-client
+  namespace: kube-system
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: nofire-client
+rules:
+- apiGroups: [""]
+  resources: ["pods", "services", "configmaps", "secrets", "persistentvolumeclaims", "persistentvolumes", "nodes", "namespaces", "resourcequotas", "limitranges"]
+  verbs: ["get", "list", "watch"]
+- apiGroups: ["apps"]
+  resources: ["deployments", "statefulsets", "daemonsets", "replicasets"]
+  verbs: ["get", "list", "watch"]
+- apiGroups: ["networking.k8s.io"]
+  resources: ["ingresses", "networkpolicies"]
+  verbs: ["get", "list", "watch"]
+- apiGroups: ["batch"]
+  resources: ["jobs"]
+  verbs: ["get", "list", "watch"]
+- apiGroups: ["policy"]
+  resources: ["poddisruptionbudgets"]
+  verbs: ["get", "list", "watch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: nofire-client
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: nofire-client
+subjects:
+- kind: ServiceAccount
+  name: nofire-client
+  namespace: kube-system
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: nofire-client
+  namespace: kube-system
+  labels:
+    app: nofire-client
+spec:
+  selector:
+    app: nofire-client
+  ports:
+  - name: http
+    port: 8080
+    targetPort: 8080
+  type: ClusterIP
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nofire-client-config
+  namespace: kube-system
+data:
+  config.json: |
+    {
+      "logLevel": "info",
+      "serverPort": 8080,
+      "maxWorkers": 4,
+      "processInterval": "100ms",
+      "graph": {
+        "pruneInterval": "1h",
+        "maxPruneAge": "24h"
+      },
+      "kube": {
+        "configPath": "",
+        "resyncInterval": "5m",
+        "resources": [
+          "pods",
+          "nodes",
+          "services",
+          "configmaps",
+          "secrets",
+          "persistentvolumeclaims",
+          "persistentvolumes",
+          "deployments",
+          "replicasets",
+          "statefulsets",
+          "daemonsets",
+          "jobs",
+          "ingresses",
+          "namespaces",
+        ]
+      },
+      "enableCausalAnalysis": true,
+      "causal": {
+        "algorithm": "counterfactual",
+        "interval": "15m"
+      },
+      "enablePublishing": true,
+      "publisher": {
+        "apiKey": "your-api-key-here",
+        "timeout": "30s",
+        "maxRetries": 3,
+        "retryDelay": "5s",
+        "enableCompression": true,
+        "graph": {
+          "url": "https://webhook.site/354af5b5-f373-466a-b559-f20f828238c",
+          "interval": "1m"
+        },
+        "heartbeat": {
+          "url": "https://webhook.site/354af5b5-f373-466a-b559-f20f828238c1",
+          "interval": "10s"
+        }
+      },
+      "logging": {
+        "level": "info",
+        "format": "json",
+        "output": "stdout"
+      },
+      "monitoring": {
+        "prometheusEnabled": true,
+        "metricsPort": 8080,
+        "metricsPath": "/metrics"
+      },
+      "tracing": {
+        "enabled": false,
+        "samplingRate": 0.1,
+        "jaegerEndpoint": ""
+      },
+      "causalAnalyzers": [
+        {
+          "type": "counterfactual",
+          "name": "counterfactual-causality",
+          "significanceLevel": 0.05,
+          "maxLag": 5,
+          "minConfidenceScore": 0.7,
+          "options": {
+            "stationarizeData": true,
+            "normalizeData": true
+          }
+        },
+        {
+          "type": "pc",
+          "name": "pc-algorithm",
+          "significanceLevel": 0.05,
+          "maxLag": 5,
+          "minConfidenceScore": 0.7,
+          "options": {
+            "maxConditionSet": 3
+          }
+        }
+      ],
+      "graphExport": {
+        "dot": {
+          "enabled": true,
+          "colorByResourceType": true,
+          "showCausalEdges": true,
+          "rankdir": "LR"
+        },
+        "json": {
+          "enabled": true,
+          "prettyPrint": true
+        }
+      }
+    }
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: nofire-client
+  namespace: kube-system
+  labels:
+    release: prometheus
+spec:
+  selector:
+    matchLabels:
+      app: nofire-client
+  endpoints:
+  - port: http
+    interval: 30s
+    path: /metrics

@@ -1,0 +1,130 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "nofire-client.configName" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "nofire-client.labels" . | nindent 4 }}
+data:
+  config.json: |
+    {
+      "logLevel": {{ .Values.config.logLevel | quote }},
+      "serverPort": {{ .Values.config.serverPort }},
+      "maxWorkers": {{ .Values.config.maxWorkers }},
+      "processInterval": {{ .Values.config.processInterval | quote }},
+      "graph": {
+        "pruneInterval": {{ .Values.config.graph.pruneInterval | quote }},
+        "maxPruneAge": {{ .Values.config.graph.maxPruneAge | quote }}
+      },
+      "kube": {
+        "configPath": {{ .Values.config.kube.configPath | quote }},
+        "resyncInterval": {{ .Values.config.kube.resyncInterval | quote }},
+        "clusterName": {{ .Values.config.kube.clusterName | quote }},
+        "resources": [
+          {{- range $index, $resource := .Values.config.kube.resources }}
+          {{- if $index }},{{ end }}
+          {{ $resource | quote }}
+          {{- end }}
+        ]
+      },
+      "enableCausalAnalysis": {{ .Values.config.enableCausalAnalysis }},
+      "causal": {
+        "algorithm": {{ .Values.config.causal.algorithm | quote }},
+        "interval": {{ .Values.config.causal.interval | quote }}
+      },
+      "services": {
+        "nameLabels": [
+          {{- range $index, $label := .Values.config.services.nameLabels }}
+          {{- if $index }},{{ end }}
+          {{ $label | quote }}
+          {{- end }}
+        ],
+        "versionLabels": [
+          {{- range $index, $label := .Values.config.services.versionLabels }}
+          {{- if $index }},{{ end }}
+          {{ $label | quote }}
+          {{- end }}
+        ],
+        {{- if .Values.config.services.provider }}
+        "provider": {
+          {{- if .Values.config.services.provider.datadog }}
+          "datadog": {
+            "apiKey": "{{ .Values.config.services.provider.datadog.apiKey }}",
+            "appKey": "{{ .Values.config.services.provider.datadog.appKey }}",
+            "url": {{ .Values.config.services.provider.datadog.url | quote }},
+            "interval": {{ .Values.config.services.provider.datadog.interval | quote }},
+            "timeout": {{ .Values.config.services.provider.datadog.timeout | quote }},
+            "env": {{ .Values.config.services.provider.datadog.env | quote }}
+          }
+          {{- else }}
+          "datadog": null
+          {{- end }}
+        }
+        {{- else }}
+        "provider": null
+        {{- end }}
+      },
+      "enablePublishing": {{ .Values.config.enablePublishing }},
+      "publisher": {
+        "apiKey": {{ .Values.config.publisher.apiKey | default "" | quote }},
+        "timeout": {{ .Values.config.publisher.timeout | quote }},
+        "maxRetries": {{ .Values.config.publisher.maxRetries }},
+        "retryDelay": {{ .Values.config.publisher.retryDelay | quote }},
+        "enableCompression": {{ .Values.config.publisher.enableCompression }},
+        "graph": {
+          "url": {{ .Values.config.publisher.graph.url | default "" | quote }},
+          "interval": {{ .Values.config.publisher.graph.interval | quote }}
+        },
+        "heartbeat": {
+          "url": {{ .Values.config.publisher.heartbeat.url | default "" | quote }},
+          "interval": {{ .Values.config.publisher.heartbeat.interval | quote }}
+        }
+      },
+      "logging": {
+        "level": {{ .Values.config.logging.level | quote }},
+        "format": {{ .Values.config.logging.format | quote }},
+        "output": {{ .Values.config.logging.output | quote }}
+      },
+      "monitoring": {
+        "prometheusEnabled": {{ .Values.config.monitoring.prometheusEnabled }},
+        "metricsPort": {{ .Values.config.monitoring.metricsPort }},
+        "metricsPath": {{ .Values.config.monitoring.metricsPath | quote }}
+      },
+      "tracing": {
+        "enabled": {{ .Values.config.tracing.enabled }},
+        "samplingRate": {{ .Values.config.tracing.samplingRate }},
+        "jaegerEndpoint": {{ .Values.config.tracing.jaegerEndpoint | quote }}
+      },
+      "causalAnalyzers": [
+        {{- range $index, $analyzer := .Values.config.causalAnalyzers }}
+        {{- if $index }},{{ end }}
+        {
+          "type": {{ $analyzer.type | quote }},
+          "name": {{ $analyzer.name | quote }},
+          "significanceLevel": {{ $analyzer.significanceLevel }},
+          "maxLag": {{ $analyzer.maxLag }},
+          "minConfidenceScore": {{ $analyzer.minConfidenceScore }},
+          "options": {
+            {{- $optionCount := len $analyzer.options }}
+            {{- $currentIndex := 0 }}
+            {{- range $key, $value := $analyzer.options }}
+            {{- $currentIndex = add $currentIndex 1 }}
+            {{ $key | quote }}: {{ $value }}{{ if lt $currentIndex $optionCount }},{{ end }}
+            {{- end }}
+          }
+        }
+        {{- end }}
+      ],
+      "graphExport": {
+        "dot": {
+          "enabled": {{ .Values.config.graphExport.dot.enabled }},
+          "colorByResourceType": {{ .Values.config.graphExport.dot.colorByResourceType }},
+          "showCausalEdges": {{ .Values.config.graphExport.dot.showCausalEdges }},
+          "rankdir": {{ .Values.config.graphExport.dot.rankdir | quote }}
+        },
+        "json": {
+          "enabled": {{ .Values.config.graphExport.json.enabled }},
+          "prettyPrint": {{ .Values.config.graphExport.json.prettyPrint }}
+        }
+      }
+    } 

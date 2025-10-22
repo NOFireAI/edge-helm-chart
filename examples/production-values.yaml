@@ -1,0 +1,201 @@
+# Production configuration example
+image:
+  repository: localhost:50001/nofire-client
+  tag: "latest"
+  pullPolicy: Always
+
+imagePullSecrets: []
+
+# Scale for production
+replicaCount: 1
+
+strategy:
+  type: RollingUpdate
+  rollingUpdate:
+    maxUnavailable: 1
+    maxSurge: 1
+
+serviceAccount:
+  create: true
+  annotations:
+    eks.amazonaws.com/role-arn: arn:aws:iam::123456789012:role/nofire-client-role
+
+# Resource configuration
+resources:
+  requests:
+    cpu: 500m
+    memory: 512Mi
+  limits:
+    cpu: 1000m
+    memory: 1Gi
+
+# Enable monitoring
+monitoring:
+  serviceMonitor:
+    enabled: true
+    labels:
+      release: prometheus
+      environment: production
+    interval: 15s
+
+# Production configuration
+config:
+  logLevel: "info"
+  maxWorkers: 8
+  processInterval: "50ms"
+  
+  graph:
+    pruneInterval: "30m"
+    maxPruneAge: "12h"
+  
+  kube:
+    resyncInterval: "2m"
+    # Monitor all available resources
+    resources:
+      - "pods"
+      - "nodes"  
+      - "k8services"
+      - "services"
+      - "configmaps"
+      - "secrets"
+      - "persistentvolumeclaims"
+      - "persistentvolumes"
+      - "deployments"
+      - "replicasets"
+      - "statefulsets"
+      - "daemonsets"
+      - "jobs"
+      - "ingresses"
+      - "namespaces"
+  
+  # Enable publishing with real endpoints
+  enablePublishing: false
+  publisher:
+    apiKey: "production-api-key-from-secret"
+    timeout: "30s"
+    maxRetries: 5
+    retryDelay: "10s"
+    enableCompression: true
+    graph:
+      url: "https://webhook.site/5de2c1ca-fb19-4ca7-a8e1-1e422941e5ab"
+      interval: "2m"
+    heartbeat:
+      url: "https://webhook.site/5de2c1ca-fb19-4ca7-a8e1-1e422941e5ab"
+      interval: "30s"
+  
+  # Services configuration for service discovery and dependency tracking
+  services:
+    nameLabels:
+      - "opentelemetry.io/service.name"
+      - "app.kubernetes.io/name"
+      - "service"
+      - "serviceName"
+      - "app"
+    versionLabels:
+      - "opentelemetry.io/service.version"
+      - "app.kubernetes.io/version"
+      - "version"
+    provider:
+      datadog:
+        apiKey: "{DATADOG_API_KEY}"
+        appKey: "{DATADOG_APP_KEY}"
+        url: "https://api.datadoghq.com"
+        interval: "1m"
+        timeout: "30s"
+        env: "otel"
+  
+  # Causal analysis configuration
+  enableCausalAnalysis: true
+  causal:
+    algorithm: "counterfactual"
+    interval: "10m"
+
+# Node scheduling
+tolerations:
+  - key: "node-role.kubernetes.io/master"
+    operator: "Exists"
+    effect: "NoSchedule"
+
+affinity:
+  podAntiAffinity:
+    preferredDuringSchedulingIgnoredDuringExecution:
+    - weight: 100
+      podAffinityTerm:
+        labelSelector:
+          matchExpressions:
+          - key: app.kubernetes.io/name
+            operator: In
+            values:
+            - nofire-client
+        topologyKey: kubernetes.io/hostname
+
+# Enable ingress for external access
+ingress:
+  enabled: true
+  className: "nginx"
+  annotations:
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+  hosts:
+    - host: nofire-client.production.com
+      paths:
+        - path: /
+          pathType: Prefix
+  tls:
+    - secretName: nofire-client-tls
+      hosts:
+        - nofire-client.production.com 
+
+podDisruptionBudget:
+  enabled: true
+  minAvailable: 1
+
+livenessProbe:
+  httpGet:
+    path: /healthz
+    port: http
+  initialDelaySeconds: 60
+  periodSeconds: 30
+  timeoutSeconds: 10
+  failureThreshold: 3
+
+readinessProbe:
+  httpGet:
+    path: /healthz
+    port: http
+  initialDelaySeconds: 10
+  periodSeconds: 10
+  timeoutSeconds: 5
+  failureThreshold: 3
+
+autoscaling:
+  enabled: false
+ 
+
+nodeSelector:
+  kubernetes.io/arch: arm64
+
+service:
+  type: ClusterIP
+  port: 8080
+  annotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "8080"
+    prometheus.io/path: "/metrics"
+
+env:
+  - name: ENVIRONMENT
+    value: "production"
+  - name: LOG_LEVEL
+    value: "info"
+  - name: DATADOG_API_KEY
+    valueFrom:
+      secretKeyRef:
+        name: datadog-secret
+        key: api-key
+  - name: DATADOG_APP_KEY
+    valueFrom:
+      secretKeyRef:
+        name: datadog-secret
+        key: app-key 
