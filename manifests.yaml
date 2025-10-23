@@ -1,28 +1,28 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: nofire-client
+  name: nofire-edge
   namespace: kube-system
   labels:
-    app: nofire-client
+    app: nofire-edge
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: nofire-client
+      app: nofire-edge
   template:
     metadata:
       labels:
-        app: nofire-client
+        app: nofire-edge
     spec:
-      serviceAccountName: nofire-client
+      serviceAccountName: nofire-edge
       restartPolicy: Always
       containers:
       - name: client  
-        image: nofire-client:latest
+        image: nofire-edge:latest
         imagePullPolicy: IfNotPresent
-        command: ["/nofire-client"]
-        args: ["--config", "/etc/client/config.json"]
+        command: ["/nofire-edge"]
+        args: ["--config", "/etc/nofire-edge/config.json"]
         env:
         - name: NODE_NAME
           valueFrom:
@@ -42,7 +42,7 @@ spec:
           name: http
         volumeMounts:
         - name: client-config
-          mountPath: /etc/client
+          mountPath: /etc/nofire-edge
           readOnly: true
         livenessProbe:
           httpGet:
@@ -63,18 +63,18 @@ spec:
       volumes:
       - name: client-config
         configMap:
-          name: nofire-client-config
+          name: nofire-edge-config
 ---
 apiVersion: v1
 kind: ServiceAccount
 metadata:
-  name: nofire-client
+  name: nofire-edge
   namespace: kube-system
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  name: nofire-client
+  name: nofire-edge
 rules:
 - apiGroups: [""]
   resources: ["pods", "services", "configmaps", "secrets", "persistentvolumeclaims", "persistentvolumes", "nodes", "namespaces", "resourcequotas", "limitranges"]
@@ -95,26 +95,26 @@ rules:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
-  name: nofire-client
+  name: nofire-edge
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
-  name: nofire-client
+  name: nofire-edge
 subjects:
 - kind: ServiceAccount
-  name: nofire-client
+  name: nofire-edge
   namespace: kube-system
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: nofire-client
+  name: nofire-edge
   namespace: kube-system
   labels:
-    app: nofire-client
+    app: nofire-edge
 spec:
   selector:
-    app: nofire-client
+    app: nofire-edge
   ports:
   - name: http
     port: 8080
@@ -124,7 +124,7 @@ spec:
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: nofire-client-config
+  name: nofire-edge-config
   namespace: kube-system
 data:
   config.json: |
@@ -233,14 +233,14 @@ data:
 apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
-  name: nofire-client
+  name: nofire-edge
   namespace: kube-system
   labels:
     release: prometheus
 spec:
   selector:
     matchLabels:
-      app: nofire-client
+      app: nofire-edge
   endpoints:
   - port: http
     interval: 30s

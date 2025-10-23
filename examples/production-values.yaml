@@ -1,6 +1,6 @@
 # Production configuration example
 image:
-  repository: localhost:50001/nofire-client
+  repository: localhost:50001/nofire-edge
   tag: "latest"
   pullPolicy: Always
 
@@ -18,7 +18,7 @@ strategy:
 serviceAccount:
   create: true
   annotations:
-    eks.amazonaws.com/role-arn: arn:aws:iam::123456789012:role/nofire-client-role
+    eks.amazonaws.com/role-arn: arn:aws:iam::123456789012:role/nofire-edge-role
 
 # Resource configuration
 resources:
@@ -126,7 +126,7 @@ affinity:
           - key: app.kubernetes.io/name
             operator: In
             values:
-            - nofire-client
+            - nofire-edge
         topologyKey: kubernetes.io/hostname
 
 # Enable ingress for external access
@@ -138,14 +138,14 @@ ingress:
     nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
     cert-manager.io/cluster-issuer: "letsencrypt-prod"
   hosts:
-    - host: nofire-client.production.com
+    - host: nofire-edge.production.com
       paths:
         - path: /
           pathType: Prefix
   tls:
-    - secretName: nofire-client-tls
+    - secretName: nofire-edge-tls
       hosts:
-        - nofire-client.production.com 
+        - nofire-edge.production.com 
 
 podDisruptionBudget:
   enabled: true

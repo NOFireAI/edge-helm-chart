@@ -1,10 +1,10 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ include "nofire-client.fullname" . }}
+  name: {{ include "nofire-edge.fullname" . }}
   namespace: {{ .Release.Namespace }}
   labels:
-    {{- include "nofire-client.labels" . | nindent 4 }}
+    {{- include "nofire-edge.labels" . | nindent 4 }}
 spec:
   replicas: {{ .Values.replicaCount }}
   {{- with .Values.strategy }}
@@ -13,7 +13,7 @@ spec:
   {{- end }}
   selector:
     matchLabels:
-      {{- include "nofire-client.selectorLabels" . | nindent 6 }}
+      {{- include "nofire-edge.selectorLabels" . | nindent 6 }}
   template:
     metadata:
       annotations:
@@ -23,7 +23,7 @@ spec:
         {{- toYaml . | nindent 8 }}
         {{- end }}
       labels:
-        {{- include "nofire-client.selectorLabels" . | nindent 8 }}
+        {{- include "nofire-edge.selectorLabels" . | nindent 8 }}
         {{- with .Values.podLabels }}
         {{- toYaml . | nindent 8 }}
         {{- end }}
@@ -32,7 +32,7 @@ spec:
       imagePullSecrets:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-      serviceAccountName: {{ include "nofire-client.serviceAccountName" . }}
+      serviceAccountName: {{ include "nofire-edge.serviceAccountName" . }}
       restartPolicy: Always
       {{- with .Values.podSecurityContext }}
       securityContext:
@@ -48,10 +48,10 @@ spec:
           securityContext:
             {{- toYaml . | nindent 12 }}
           {{- end }}
-          image: {{ include "nofire-client.image" . }}
+          image: {{ include "nofire-edge.image" . }}
           imagePullPolicy: {{ .Values.image.pullPolicy }}
-          command: ["/nofire-client"]
-          args: ["--config", "/etc/client/config.json"]
+          command: ["/nofire-edge"]
+          args: ["--config", "/etc/nofire-edge/config.json"]
           env:
             {{- if .Values.nodeName.enabled }}
             - name: NODE_NAME
@@ -82,7 +82,7 @@ spec:
           {{- end }}
           volumeMounts:
             - name: client-config
-              mountPath: /etc/client
+              mountPath: /etc/nofire-edge
               readOnly: true
             {{- with .Values.extraVolumeMounts }}
             {{- toYaml . | nindent 12 }}
@@ -93,7 +93,7 @@ spec:
       volumes:
         - name: client-config
           configMap:
-            name: {{ include "nofire-client.configName" . }}
+            name: {{ include "nofire-edge.configName" . }}
         {{- with .Values.extraVolumes }}
         {{- toYaml . | nindent 8 }}
         {{- end }}

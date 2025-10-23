@@ -1,10 +1,10 @@
-# Default values for nofire-client.
+# Default values for nofire-edge.
 # This is a YAML-formatted file.
 # Declare variables to be passed into your templates.
 
 # Image configuration
 image:
-  repository: localhost:50001/nofire-client
+  repository: localhost:50001/nofire-edge
   pullPolicy: Always
   # Overrides the image tag whose default is the chart appVersion.
   tag: "latest"

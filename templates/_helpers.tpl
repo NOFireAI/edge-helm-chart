@@ -1,7 +1,7 @@
 {{/*
 Expand the name of the chart.
 */}}
-{{- define "nofire-client.name" -}}
+{{- define "nofire-edge.name" -}}
 {{- default .Chart.Name .Values.nameOverride | trunc 63 | trimSuffix "-" }}
 {{- end }}
 
@@ -10,7 +10,7 @@ Create a default fully qualified app name.
 We truncate at 63 chars because some Kubernetes name fields are limited to this (by the DNS naming spec).
 If release name contains chart name it will be used as a full name.
 */}}
-{{- define "nofire-client.fullname" -}}
+{{- define "nofire-edge.fullname" -}}
 {{- if .Values.fullnameOverride }}
 {{- .Values.fullnameOverride | trunc 63 | trimSuffix "-" }}
 {{- else }}
@@ -26,16 +26,16 @@ If release name contains chart name it will be used as a full name.
 {{/*
 Create chart name and version as used by the chart label.
 */}}
-{{- define "nofire-client.chart" -}}
+{{- define "nofire-edge.chart" -}}
 {{- printf "%s-%s" .Chart.Name .Chart.Version | replace "+" "_" | trunc 63 | trimSuffix "-" }}
 {{- end }}
 
 {{/*
 Common labels
 */}}
-{{- define "nofire-client.labels" -}}
-helm.sh/chart: {{ include "nofire-client.chart" . }}
-{{ include "nofire-client.selectorLabels" . }}
+{{- define "nofire-edge.labels" -}}
+helm.sh/chart: {{ include "nofire-edge.chart" . }}
+{{ include "nofire-edge.selectorLabels" . }}
 {{- if .Chart.AppVersion }}
 app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
 {{- end }}
@@ -45,17 +45,17 @@ app.kubernetes.io/managed-by: {{ .Release.Service }}
 {{/*
 Selector labels
 */}}
-{{- define "nofire-client.selectorLabels" -}}
-app.kubernetes.io/name: {{ include "nofire-client.name" . }}
+{{- define "nofire-edge.selectorLabels" -}}
+app.kubernetes.io/name: {{ include "nofire-edge.name" . }}
 app.kubernetes.io/instance: {{ .Release.Name }}
 {{- end }}
 
 {{/*
 Create the name of the service account to use
 */}}
-{{- define "nofire-client.serviceAccountName" -}}
+{{- define "nofire-edge.serviceAccountName" -}}
 {{- if .Values.serviceAccount.create }}
-{{- default (include "nofire-client.fullname" .) .Values.serviceAccount.name }}
+{{- default (include "nofire-edge.fullname" .) .Values.serviceAccount.name }}
 {{- else }}
 {{- default "default" .Values.serviceAccount.name }}
 {{- end }}
@@ -64,21 +64,21 @@ Create the name of the service account to use
 {{/*
 Create the image string
 */}}
-{{- define "nofire-client.image" -}}
+{{- define "nofire-edge.image" -}}
 {{- printf "%s:%s" .Values.image.repository (.Values.image.tag | default .Chart.AppVersion) }}
 {{- end }}
 
 {{/*
 Create config name
 */}}
-{{- define "nofire-client.configName" -}}
-{{- printf "%s-config" (include "nofire-client.fullname" .) }}
+{{- define "nofire-edge.configName" -}}
+{{- printf "%s-config" (include "nofire-edge.fullname" .) }}
 {{- end }}
 
 {{/*
 Create ServiceMonitor namespace
 */}}
-{{- define "nofire-client.serviceMonitorNamespace" -}}
+{{- define "nofire-edge.serviceMonitorNamespace" -}}
 {{- if .Values.monitoring.serviceMonitor.namespace }}
 {{- .Values.monitoring.serviceMonitor.namespace }}
 {{- else }}
