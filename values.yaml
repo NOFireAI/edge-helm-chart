@@ -4,7 +4,7 @@
 
 # Image configuration
 image:
-  repository: localhost:50001/nofire-edge
+  repository: nofireai/edge
   pullPolicy: Always
   # Overrides the image tag whose default is the chart appVersion.
   tag: "latest"

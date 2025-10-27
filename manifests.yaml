@@ -19,7 +19,7 @@ spec:
       restartPolicy: Always
       containers:
       - name: client  
-        image: nofire-edge:latest
+        image: nofireai/edge:latest
         imagePullPolicy: IfNotPresent
         command: ["/nofire-edge"]
         args: ["--config", "/etc/nofire-edge/config.json"]
@@ -170,11 +170,11 @@ data:
         "retryDelay": "5s",
         "enableCompression": true,
         "graph": {
-          "url": "https://webhook.site/354af5b5-f373-466a-b559-f20f828238c",
+          "url": "https://my.nofire.ai/api/edge",
           "interval": "1m"
         },
         "heartbeat": {
-          "url": "https://webhook.site/354af5b5-f373-466a-b559-f20f828238c1",
+          "url": "https://my.nofire.ai/api/edge/heartbeat",
           "interval": "10s"
         }
       },
