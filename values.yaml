@@ -203,17 +203,26 @@ config:
   
   # Services configuration
   services:
-    nameLabels:
-      - "opentelemetry.io/service.name"
-      - "app.kubernetes.io/name"
-      - "service"
-      - "serviceName"
-      - "app"
-    versionLabels:
-      - "opentelemetry.io/service.version"
-      - "app.kubernetes.io/version"
-      - "version"
-    provider: null
+    workers: 4
+    # address: "127.0.0.1:6000"
+    # maxConns: 10
+    # readTimeout: "30s"
+    # writeTimeout: "30s"
+    # tls:
+    #   enabled: false
+    #   certFile: ""
+    #   keyFile: ""
+    #   caFile: ""
+    #   requireClientCert: false
+    #   minVersion: "1.2"
+    #   cipherSuites: []
+    # compression:
+    #   enabled: false
+    #   type: "none"
+    #   level: -1
+    # handshake:
+    #   timeout: "5s"
+    #   contentType: "protobuf:dnstap.Dnstap"
 
   # Publishing configuration
   enablePublishing: true
@@ -231,51 +240,6 @@ config:
     heartbeat:
       # url: <brain url>
       interval: "10s"
-
-  # Additional configuration sections (match manifest)
-  logging:
-    level: "info"
-    format: "json"
-    output: "stdout"
-  
-  monitoring:
-    prometheusEnabled: true
-    metricsPort: 8080
-    metricsPath: "/metrics"
-  
-  tracing:
-    enabled: false
-    samplingRate: 0.1
-    jaegerEndpoint: ""
-  
-  # Causal analyzers configuration (from manifest)
-  causalAnalyzers:
-    - type: "counterfactual"
-      name: "counterfactual-causality"
-      significanceLevel: 0.05
-      maxLag: 5
-      minConfidenceScore: 0.7
-      options:
-        stationarizeData: true
-        normalizeData: true
-    - type: "pc"
-      name: "pc-algorithm"
-      significanceLevel: 0.05
-      maxLag: 5
-      minConfidenceScore: 0.7
-      options:
-        maxConditionSet: 3
-  
-  # Graph export configuration (from manifest)
-  graphExport:
-    dot:
-      enabled: true
-      colorByResourceType: true
-      showCausalEdges: true
-      rankdir: "LR"
-    json:
-      enabled: true
-      prettyPrint: true
 
 # Environment variables
 env: []
@@ -301,4 +265,4 @@ nodeName:
   # Enable automatic node name injection
   enabled: true
   # Field path for node name
-  fieldPath: "spec.nodeName" 
+  fieldPath: "spec.nodeName"

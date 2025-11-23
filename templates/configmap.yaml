@@ -33,35 +33,35 @@ data:
         "interval": {{ .Values.config.causal.interval | quote }}
       },
       "services": {
-        "nameLabels": [
-          {{- range $index, $label := .Values.config.services.nameLabels }}
-          {{- if $index }},{{ end }}
-          {{ $label | quote }}
-          {{- end }}
-        ],
-        "versionLabels": [
-          {{- range $index, $label := .Values.config.services.versionLabels }}
-          {{- if $index }},{{ end }}
-          {{ $label | quote }}
-          {{- end }}
-        ],
-        {{- if .Values.config.services.provider }}
-        "provider": {
-          {{- if .Values.config.services.provider.datadog }}
-          "datadog": {
-            "apiKey": "{{ .Values.config.services.provider.datadog.apiKey }}",
-            "appKey": "{{ .Values.config.services.provider.datadog.appKey }}",
-            "url": {{ .Values.config.services.provider.datadog.url | quote }},
-            "interval": {{ .Values.config.services.provider.datadog.interval | quote }},
-            "timeout": {{ .Values.config.services.provider.datadog.timeout | quote }},
-            "env": {{ .Values.config.services.provider.datadog.env | quote }}
-          }
-          {{- else }}
-          "datadog": null
-          {{- end }}
+        "workers": {{ .Values.config.services.workers }},
+        {{- if .Values.config.services.address }}
+        "address": {{ .Values.config.services.address | quote }},
+        "maxConns": {{ .Values.config.services.maxConns }},
+        "readTimeout": {{ .Values.config.services.readTimeout | quote }},
+        "writeTimeout": {{ .Values.config.services.writeTimeout | quote }},
+        "tls": {
+          "enabled": {{ .Values.config.services.tls.enabled }},
+          "certFile": {{ .Values.config.services.tls.certFile | quote }},
+          "keyFile": {{ .Values.config.services.tls.keyFile | quote }},
+          "caFile": {{ .Values.config.services.tls.caFile | quote }},
+          "requireClientCert": {{ .Values.config.services.tls.requireClientCert }},
+          "minVersion": {{ .Values.config.services.tls.minVersion | quote }},
+          "cipherSuites": [
+            {{- range $index, $suite := .Values.config.services.tls.cipherSuites }}
+            {{- if $index }},{{ end }}
+            {{ $suite | quote }}
+            {{- end }}
+          ]
+        },
+        "compression": {
+          "enabled": {{ .Values.config.services.compression.enabled }},
+          "type": {{ .Values.config.services.compression.type | quote }},
+          "level": {{ .Values.config.services.compression.level }}
+        },
+        "handshake": {
+          "timeout": {{ .Values.config.services.handshake.timeout | quote }},
+          "contentType": {{ .Values.config.services.handshake.contentType | quote }}
         }
-        {{- else }}
-        "provider": null
         {{- end }}
       },
       "enablePublishing": {{ .Values.config.enablePublishing }},
@@ -79,52 +79,5 @@ data:
           "url": {{ .Values.config.publisher.heartbeat.url | default "" | quote }},
           "interval": {{ .Values.config.publisher.heartbeat.interval | quote }}
         }
-      },
-      "logging": {
-        "level": {{ .Values.config.logging.level | quote }},
-        "format": {{ .Values.config.logging.format | quote }},
-        "output": {{ .Values.config.logging.output | quote }}
-      },
-      "monitoring": {
-        "prometheusEnabled": {{ .Values.config.monitoring.prometheusEnabled }},
-        "metricsPort": {{ .Values.config.monitoring.metricsPort }},
-        "metricsPath": {{ .Values.config.monitoring.metricsPath | quote }}
-      },
-      "tracing": {
-        "enabled": {{ .Values.config.tracing.enabled }},
-        "samplingRate": {{ .Values.config.tracing.samplingRate }},
-        "jaegerEndpoint": {{ .Values.config.tracing.jaegerEndpoint | quote }}
-      },
-      "causalAnalyzers": [
-        {{- range $index, $analyzer := .Values.config.causalAnalyzers }}
-        {{- if $index }},{{ end }}
-        {
-          "type": {{ $analyzer.type | quote }},
-          "name": {{ $analyzer.name | quote }},
-          "significanceLevel": {{ $analyzer.significanceLevel }},
-          "maxLag": {{ $analyzer.maxLag }},
-          "minConfidenceScore": {{ $analyzer.minConfidenceScore }},
-          "options": {
-            {{- $optionCount := len $analyzer.options }}
-            {{- $currentIndex := 0 }}
-            {{- range $key, $value := $analyzer.options }}
-            {{- $currentIndex = add $currentIndex 1 }}
-            {{ $key | quote }}: {{ $value }}{{ if lt $currentIndex $optionCount }},{{ end }}
-            {{- end }}
-          }
-        }
-        {{- end }}
-      ],
-      "graphExport": {
-        "dot": {
-          "enabled": {{ .Values.config.graphExport.dot.enabled }},
-          "colorByResourceType": {{ .Values.config.graphExport.dot.colorByResourceType }},
-          "showCausalEdges": {{ .Values.config.graphExport.dot.showCausalEdges }},
-          "rankdir": {{ .Values.config.graphExport.dot.rankdir | quote }}
-        },
-        "json": {
-          "enabled": {{ .Values.config.graphExport.json.enabled }},
-          "prettyPrint": {{ .Values.config.graphExport.json.prettyPrint }}
-        }
       }
-    } 
+    }
