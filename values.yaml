@@ -67,7 +67,9 @@ securityContext:
 # Service configuration
 service:
   type: ClusterIP
+  # clusterIP: "" # Optional: Set a static ClusterIP
   port: 8080
+  dnstapPort: 6000
   targetPort: 8080
   annotations: {}
 
