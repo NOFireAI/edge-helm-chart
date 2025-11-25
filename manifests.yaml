@@ -131,8 +131,6 @@ data:
     {
       "logLevel": "info",
       "serverPort": 8080,
-      "maxWorkers": 4,
-      "processInterval": "100ms",
       "graph": {
         "pruneInterval": "1h",
         "maxPruneAge": "24h"

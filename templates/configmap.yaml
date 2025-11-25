@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: {{ include "nofire-edge.configName" . }}
+  name: {{ include "nofire-edge.fullname" . }}-config
   namespace: {{ .Release.Namespace }}
   labels:
     {{- include "nofire-edge.labels" . | nindent 4 }}
@@ -10,8 +10,6 @@ data:
     {
       "logLevel": {{ .Values.config.logLevel | quote }},
       "serverPort": {{ .Values.config.serverPort }},
-      "maxWorkers": {{ .Values.config.maxWorkers }},
-      "processInterval": {{ .Values.config.processInterval | quote }},
       "graph": {
         "pruneInterval": {{ .Values.config.graph.pruneInterval | quote }},
         "maxPruneAge": {{ .Values.config.graph.maxPruneAge | quote }}
@@ -40,12 +38,12 @@ data:
         "readTimeout": {{ .Values.config.services.readTimeout | quote }},
         "writeTimeout": {{ .Values.config.services.writeTimeout | quote }},
         "tls": {
-          "enabled": {{ .Values.config.services.tls.enabled }},
-          "certFile": {{ .Values.config.services.tls.certFile | quote }},
-          "keyFile": {{ .Values.config.services.tls.keyFile | quote }},
-          "caFile": {{ .Values.config.services.tls.caFile | quote }},
-          "requireClientCert": {{ .Values.config.services.tls.requireClientCert }},
-          "minVersion": {{ .Values.config.services.tls.minVersion | quote }},
+          "enabled": {{ .Values.config.services.tls.enabled | default false }},
+          "certFile": {{ .Values.config.services.tls.certFile | default "" | quote }},
+          "keyFile": {{ .Values.config.services.tls.keyFile | default "" | quote }},
+          "caFile": {{ .Values.config.services.tls.caFile | default "" | quote }},
+          "requireClientCert": {{ .Values.config.services.tls.requireClientCert | default false }},
+          "minVersion": {{ .Values.config.services.tls.minVersion | default "" | quote }},
           "cipherSuites": [
             {{- range $index, $suite := .Values.config.services.tls.cipherSuites }}
             {{- if $index }},{{ end }}
@@ -54,13 +52,13 @@ data:
           ]
         },
         "compression": {
-          "enabled": {{ .Values.config.services.compression.enabled }},
-          "type": {{ .Values.config.services.compression.type | quote }},
-          "level": {{ .Values.config.services.compression.level }}
+          "enabled": {{ .Values.config.services.compression.enabled | default false }},
+          "type": {{ .Values.config.services.compression.type | default "" | quote }},
+          "level": {{ .Values.config.services.compression.level | default -1 }}
         },
         "handshake": {
-          "timeout": {{ .Values.config.services.handshake.timeout | quote }},
-          "contentType": {{ .Values.config.services.handshake.contentType | quote }}
+          "timeout": {{ .Values.config.services.handshake.timeout | default "" | quote }},
+          "contentType": {{ .Values.config.services.handshake.contentType | default "" | quote }}
         }
         {{- end }}
       },

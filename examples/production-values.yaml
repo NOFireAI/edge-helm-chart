@@ -41,8 +41,6 @@ monitoring:
 # Production configuration
 config:
   logLevel: "info"
-  maxWorkers: 8
-  processInterval: "50ms"
   
   graph:
     pruneInterval: "30m"

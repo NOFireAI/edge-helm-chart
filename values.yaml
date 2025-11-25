@@ -168,8 +168,6 @@ config:
   # Server configuration
   serverPort: 8080
    
-  maxWorkers: 4
-  processInterval: "100ms"
   
   # Graph configuration
   graph:
