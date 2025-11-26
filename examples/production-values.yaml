@@ -1,6 +1,7 @@
 # Production configuration example
 image:
-  repository: localhost:50001/nofire-edge
+  #repository: localhost:50001/nofire-edge
+  repository: nofireai/edge
   tag: "latest"
   pullPolicy: Always
 

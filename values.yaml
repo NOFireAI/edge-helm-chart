@@ -168,6 +168,15 @@ config:
   # Server configuration
   serverPort: 8080
    
+  # Sentry configuration
+  sentry:
+    dsn: ""
+    environment: "production"
+    release: ""
+    debug: false
+    sampleRate: 1.0
+    tracesSampleRate: 0.2
+   
   
   # Graph configuration
   graph:
