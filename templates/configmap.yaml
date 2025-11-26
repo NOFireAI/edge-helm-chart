@@ -30,6 +30,14 @@ data:
         "algorithm": {{ .Values.config.causal.algorithm | quote }},
         "interval": {{ .Values.config.causal.interval | quote }}
       },
+      "sentry": {
+        "dsn": {{ .Values.config.sentry.dsn | default "" | quote }},
+        "environment": {{ .Values.config.sentry.environment | default "" | quote }},
+        "release": {{ .Values.config.sentry.release | default "" | quote }},
+        "debug": {{ .Values.config.sentry.debug | default false }},
+        "sampleRate": {{ .Values.config.sentry.sampleRate | default 1.0 }},
+        "tracesSampleRate": {{ .Values.config.sentry.tracesSampleRate | default 0.0 }}
+      },
       "services": {
         "workers": {{ .Values.config.services.workers }},
         {{- if .Values.config.services.address }}

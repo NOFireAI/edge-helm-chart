@@ -168,6 +168,15 @@ config:
   # Server configuration
   serverPort: 8080
    
+  # Sentry configuration
+  sentry:
+    dsn: "https://0d3d5e19f07e0173eaadeb930a405150@o4507775482789888.ingest.de.sentry.io/4510431321718864"
+    environment: "production"
+    release: ""
+    debug: false
+    sampleRate: 1.0
+    tracesSampleRate: 0.2
+   
   
   # Graph configuration
   graph:
