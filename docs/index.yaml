@@ -21,6 +21,6 @@ entries:
     - https://github.com/nofireai/agent
     type: application
     urls:
-    - https://NOFireAI.github.io/edge-helm-chart/nofire-edge-0.1.0.tgz
+    - https://nofireai.github.io/edge-helm-chart/nofire-edge-0.1.0.tgz
     version: 0.1.0
 generated: "2025-11-27T14:22:10.452305+02:00"
