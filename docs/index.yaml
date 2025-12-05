@@ -2,7 +2,7 @@ apiVersion: v1
 entries:
   nofire-edge:
   - apiVersion: v2
-    appVersion: 1.0.0
+    appVersion: 2.1.0
     created: "2025-11-27T14:22:10.453554+02:00"
     description: A Helm chart for Kubernetes Resource Graph & Causal Analysis
     digest: 05d420638ed3d3abb4e1762bc89338cd3a9797d6627749abf1cc5a60274d36be
@@ -22,5 +22,5 @@ entries:
     type: application
     urls:
     - https://nofireai.github.io/edge-helm-chart/nofire-edge-0.1.0.tgz
-    version: 0.1.0
+    version: 0.2.0
 generated: "2025-11-27T14:22:10.452305+02:00"
