@@ -1,5 +1,121 @@
-# Nofire Edge Helm Chart
+# NOFire Edge Helm Chart
 
-A Helm chart for deploying the NOFire Edge - Kubernetes Resource Graph & Causal Analysis monitoring client.
+A Helm chart for deploying NOFire Edge - Kubernetes Resource Graph & Causal Analysis monitoring client.
 
-Full documentation can be found [here](https://docs.nofire.ai/monitoring/nofire_edge_client).
+## Quick Start
+
+### Add Helm Repository
+
+```bash
+helm repo add nofire https://nofireai.github.io/edge-helm-chart
+helm repo update
+```
+
+### Install
+
+```bash
+helm install nofire-edge nofire/nofire-edge \
+  --set config.publisher.apiKey=YOUR_API_KEY \
+  -n nofire-system --create-namespace
+```
+
+**Important:**
+- Replace `YOUR_API_KEY` with your actual API key from the NOFire dashboard
+- The graph URL defaults to `https://my.nofire.ai/api/edge`
+- ServiceMonitor is disabled by default (enable with `--set monitoring.serviceMonitor.enabled=true` if using Prometheus Operator)
+
+## Key Configuration Values
+
+| Parameter | Description | Default | Required |
+|-----------|-------------|---------|----------|
+| `config.publisher.apiKey` | API key for authentication | `""` | **Yes** |
+| `config.publisher.graph.url` | NOFire API endpoint | `https://my.nofire.ai/api/edge` | No |
+| `service.clusterIP` | Static ClusterIP (recommended) | `""` | No |
+| `monitoring.serviceMonitor.enabled` | Enable Prometheus ServiceMonitor | `false` | No |
+
+## Advanced Installation with Static IP
+
+For production deployments, it's recommended to use a static ClusterIP:
+
+```bash
+# Initial install to get ClusterIP
+helm install nofire-edge nofire/nofire-edge \
+  --set config.publisher.apiKey=YOUR_API_KEY \
+  -n nofire-system --create-namespace
+
+# Get the assigned ClusterIP
+kubectl get service nofire-edge -n nofire-system
+
+# Reinstall with static IP
+helm uninstall nofire-edge -n nofire-system
+helm install nofire-edge nofire/nofire-edge \
+  --set config.publisher.apiKey=YOUR_API_KEY \
+  --set service.clusterIP=<CLUSTER_IP_FROM_ABOVE> \
+  -n nofire-system --create-namespace
+```
+
+## Using a Values File
+
+Create a `values.yaml` file:
+
+```yaml
+config:
+  publisher:
+    apiKey: "your-api-key-here"
+    graph:
+      url: "https://my.nofire.ai/api/edge"  # Optional, this is the default
+
+service:
+  clusterIP: "10.96.145.200"  # Optional: Use static IP
+
+monitoring:
+  serviceMonitor:
+    enabled: false  # Set to true if Prometheus Operator is installed
+```
+
+Install with values file:
+
+```bash
+helm install nofire-edge nofire/nofire-edge -f values.yaml -n nofire-system --create-namespace
+```
+
+## Troubleshooting
+
+### ServiceMonitor CRD Not Found (if enabled)
+
+**Error:** `no matches for kind "ServiceMonitor" in version "monitoring.coreos.com/v1"`
+
+**Solution:** ServiceMonitor requires Prometheus Operator. Either install Prometheus Operator or keep ServiceMonitor disabled (default).
+
+### Configuration Issues
+
+Check the pod logs for errors:
+```bash
+kubectl logs -l app=nofire-edge -n nofire-system
+```
+
+### Verify Installation
+
+```bash
+# Check pod status
+kubectl get pods -n nofire-system
+
+# Check service
+kubectl get svc nofire-edge -n nofire-system
+
+# View logs
+kubectl logs -f deployment/nofire-edge -n nofire-system
+```
+
+## Full Documentation
+
+Complete installation guide, DNSTap configuration, and advanced settings:
+- [Quick Start Guide](https://docs.nofire.ai/edge/quick-start)
+- [Installation Guide](https://docs.nofire.ai/edge/installation)
+- [Configuration Reference](https://docs.nofire.ai/edge/configuration)
+
+## Support
+
+For issues and questions:
+- Documentation: https://docs.nofire.ai
+- Email: team@nofire.ai

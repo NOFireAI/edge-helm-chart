@@ -39,8 +39,8 @@ data:
         "tracesSampleRate": {{ .Values.config.sentry.tracesSampleRate | default 0.0 }}
       },
       "services": {
-        "workers": {{ .Values.config.services.workers }},
-        {{- if .Values.config.services.address }}
+        "workers": {{ .Values.config.services.workers }}
+        {{- if .Values.config.services.address }},
         "address": {{ .Values.config.services.address | quote }},
         "maxConns": {{ .Values.config.services.maxConns }},
         "readTimeout": {{ .Values.config.services.readTimeout | quote }},

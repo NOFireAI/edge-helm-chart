@@ -149,7 +149,7 @@ readinessProbe:
 monitoring:
   # Enable ServiceMonitor for Prometheus Operator
   serviceMonitor:
-    enabled: true
+    enabled: false
     namespace: ""
     labels:
       release: prometheus
@@ -243,11 +243,10 @@ config:
     retryDelay: "5s"
     enableCompression: true
     graph:
-      # REQUIRED: URL for graph data publishing (must be set to a valid URL)
-      # url: <brain url>
+      url: "https://my.nofire.ai/api/edge"
       interval: "1m"
     heartbeat:
-      # url: <brain url>
+      url: ""
       interval: "10s"
 
 # Environment variables
