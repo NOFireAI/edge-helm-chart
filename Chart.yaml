@@ -2,7 +2,7 @@ apiVersion: v2
 name: nofire-edge
 description: A Helm chart for Kubernetes Resource Graph & Causal Analysis
 type: application
-version: 0.2.0
+version: 0.2.1
 appVersion: "2.1.0"
 keywords:
   - kubernetes
