@@ -218,23 +218,23 @@ edgeProxy:
       memory: "512Mi"
       cpu: "1000m"
 
-# onPremConnections:
-#   prod-prometheus:
-#     type: prometheus
-#     enabled: true
-#     name: "Production Prometheus"
-#     secretName: prometheus-creds
-#     url: "http://prometheus.monitoring:9090"
-#   prod-loki:
-#     type: loki
-#     enabled: true
-#     name: "Production Loki"
-#     secretName: loki-creds
-#     url: "http://loki.monitoring:3100"
-#     orgId: "tenant1"
-#   prod-tempo:
-#     type: tempo
-#     enabled: true
-#     name: "Production Tempo"
-#     secretName: tempo-creds
-#     url: "http://tempo.monitoring:3200"
+onPremConnections:
+  prod-prometheus:
+    type: prometheus
+    enabled: true
+    name: "Production Prometheus"
+    secretName: prometheus-creds
+    url: "http://prometheus.monitoring:9090"
+  prod-loki:
+    type: loki
+    enabled: true
+    name: "Production Loki"
+    secretName: loki-creds
+    url: "http://loki.monitoring:3100"
+    orgId: "tenant1"
+  prod-tempo:
+    type: tempo
+    enabled: true
+    name: "Production Tempo"
+    secretName: tempo-creds
+    url: "http://tempo.monitoring:3200"
