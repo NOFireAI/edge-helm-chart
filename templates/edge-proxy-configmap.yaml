@@ -1,0 +1,75 @@
+{{- if .Values.edgeProxy.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "nofire-edge.edgeProxy.configName" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "nofire-edge.edgeProxy.labels" . | nindent 4 }}
+data:
+  config.json: |
+    {
+      "apiKey": {{ .Values.config.publisher.apiKey | default "{NOFIRE_API_KEY}" | quote }},
+      "clusterName": {{ .Values.config.kube.clusterName | quote }},
+      "logLevel": {{ .Values.config.logLevel | quote }},
+      "serverPort": {{ .Values.edgeProxy.serverPort }},
+      "stream": {
+        "serverAddress": {{ .Values.edgeProxy.stream.serverAddress | quote }},
+        "useTLS": {{ .Values.edgeProxy.stream.useTLS }},
+        "reconnectDelay": {{ .Values.edgeProxy.stream.reconnectDelay | quote }},
+        "maxReconnectDelay": {{ .Values.edgeProxy.stream.maxReconnectDelay | quote }},
+        "heartbeatInterval": {{ .Values.edgeProxy.stream.heartbeatInterval | quote }},
+        "maxMessageSize": {{ .Values.edgeProxy.stream.maxMessageSize | int }},
+        "maxConcurrent": {{ .Values.edgeProxy.stream.maxConcurrent }},
+        "keepaliveTime": {{ .Values.edgeProxy.stream.keepaliveTime | quote }},
+        "keepaliveTimeout": {{ .Values.edgeProxy.stream.keepaliveTimeout | quote }},
+        "protocolVersion": {{ .Values.edgeProxy.stream.protocolVersion }}
+      },
+      "http": {
+        "timeout": {{ .Values.edgeProxy.http.timeout | quote }},
+        "maxIdleConns": {{ .Values.edgeProxy.http.maxIdleConns }},
+        "retryMaxAttempts": {{ .Values.edgeProxy.http.retryMaxAttempts }}
+      },
+      "connections": {
+        {{- $first := true }}
+        {{- range $key, $conn := .Values.onPremConnections }}
+        {{- if not $first }},{{ end }}
+        {{- $first = false }}
+        {{ $key | quote }}: {
+          "type": {{ $conn.type | quote }},
+          "enabled": {{ if kindIs "invalid" $conn.enabled }}true{{ else }}{{ $conn.enabled }}{{ end }},
+          "name": {{ $conn.name | default $key | quote }},
+          {{- if $conn.secretName }}
+          "secretName": {{ $conn.secretName | quote }},
+          {{- end }}
+          "details": {
+            "url": {{ $conn.url | quote }}
+            {{- if $conn.orgId }},
+            "orgId": {{ $conn.orgId | quote }}
+            {{- end }}
+            {{- if $conn.index }},
+            "index": {{ $conn.index | quote }}
+            {{- end }}
+            {{- if $conn.datasourceUID }},
+            "datasourceUid": {{ $conn.datasourceUID | quote }}
+            {{- end }}
+            {{- if $conn.tlsEnabled }},
+            "tlsEnabled": {{ $conn.tlsEnabled }}
+            {{- end }}
+            {{- if $conn.tlsSkipVerify }},
+            "tlsSkipVerify": {{ $conn.tlsSkipVerify }}
+            {{- end }}
+            {{- if $conn.caCertPath }},
+            "caCertPath": {{ $conn.caCertPath | quote }}
+            {{- end }}
+          }
+        }
+        {{- end }}
+      },
+      "redaction": {
+        "enabled": {{ .Values.edgeProxy.redaction.enabled }},
+        "standardPII": {{ .Values.edgeProxy.redaction.standardPII }}
+      },
+      "secretsPath": {{ .Values.edgeProxy.secretsPath | quote }}
+    }
+{{- end }}

@@ -1,0 +1,95 @@
+{{- if .Values.edgeProxy.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "nofire-edge.edgeProxy.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "nofire-edge.edgeProxy.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.edgeProxy.replicaCount | default 1 }}
+  selector:
+    matchLabels:
+      {{- include "nofire-edge.edgeProxy.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/edge-proxy-configmap.yaml") . | sha256sum }}
+      labels:
+        {{- include "nofire-edge.edgeProxy.selectorLabels" . | nindent 8 }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "nofire-edge.edgeProxy.serviceAccountName" . }}
+      restartPolicy: Always
+      containers:
+        - name: edge-proxy
+          image: {{ include "nofire-edge.edgeProxy.image" . }}
+          imagePullPolicy: {{ .Values.edgeProxy.image.pullPolicy | default .Values.image.pullPolicy }}
+          args:
+            - "-config"
+            - "/etc/nofire/config.json"
+          env:
+            - name: NODE_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: spec.nodeName
+            - name: NOFIRE_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: nofire-credentials
+                  key: api-key
+          ports:
+            - name: http
+              containerPort: {{ .Values.edgeProxy.serverPort }}
+              protocol: TCP
+          {{- with .Values.edgeProxy.livenessProbe }}
+          livenessProbe:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.edgeProxy.readinessProbe }}
+          readinessProbe:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.edgeProxy.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          volumeMounts:
+            - name: proxy-config
+              mountPath: /etc/nofire
+              readOnly: true
+            {{- $seenMounts := dict }}
+            {{- range $key, $conn := .Values.onPremConnections }}
+            {{- if and $conn.secretName (not (hasKey $seenMounts $conn.secretName)) }}
+            {{- $_ := set $seenMounts $conn.secretName true }}
+            - name: secret-{{ $conn.secretName }}
+              mountPath: {{ $.Values.edgeProxy.secretsPath }}/{{ $conn.secretName }}
+              readOnly: true
+            {{- end }}
+            {{- end }}
+      volumes:
+        - name: proxy-config
+          configMap:
+            name: {{ include "nofire-edge.edgeProxy.configName" . }}
+        {{- $seenVolumes := dict }}
+        {{- range $key, $conn := .Values.onPremConnections }}
+        {{- if and $conn.secretName (not (hasKey $seenVolumes $conn.secretName)) }}
+        {{- $_ := set $seenVolumes $conn.secretName true }}
+        - name: secret-{{ $conn.secretName }}
+          secret:
+            secretName: {{ $conn.secretName }}
+            optional: true
+        {{- end }}
+        {{- end }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+{{- end }}

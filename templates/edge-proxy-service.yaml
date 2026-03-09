@@ -1,0 +1,22 @@
+{{- if .Values.edgeProxy.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "nofire-edge.edgeProxy.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "nofire-edge.edgeProxy.labels" . | nindent 4 }}
+  {{- with .Values.edgeProxy.service.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  type: {{ .Values.edgeProxy.service.type }}
+  ports:
+    - port: {{ .Values.edgeProxy.service.port }}
+      targetPort: http
+      protocol: TCP
+      name: http
+  selector:
+    {{- include "nofire-edge.edgeProxy.selectorLabels" . | nindent 4 }}
+{{- end }}

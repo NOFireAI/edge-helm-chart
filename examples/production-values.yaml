@@ -197,4 +197,45 @@ env:
     valueFrom:
       secretKeyRef:
         name: datadog-secret
-        key: app-key 
+        key: app-key
+
+# =============================================================================
+# Edge Proxy - On-Premises Observability Connections
+# =============================================================================
+# Uncomment to deploy the edge proxy alongside the main agent.
+# Prerequisites:
+#   1. Create nofire-credentials secret: kubectl create secret generic nofire-credentials --from-literal=api-key=YOUR_KEY
+#   2. Create connector secrets: kubectl create secret generic prometheus-creds --from-literal=token=YOUR_TOKEN
+#
+# edgeProxy:
+#   enabled: true
+#   stream:
+#     serverAddress: "brain.nofire.ai:443"
+#   resources:
+#     requests:
+#       memory: "256Mi"
+#       cpu: "200m"
+#     limits:
+#       memory: "512Mi"
+#       cpu: "1000m"
+#
+# onPremConnections:
+#   prod-prometheus:
+#     type: prometheus
+#     enabled: true
+#     name: "Production Prometheus"
+#     secretName: prometheus-creds
+#     url: "http://prometheus.monitoring:9090"
+#   prod-loki:
+#     type: loki
+#     enabled: true
+#     name: "Production Loki"
+#     secretName: loki-creds
+#     url: "http://loki.monitoring:3100"
+#     orgId: "tenant1"
+#   prod-tempo:
+#     type: tempo
+#     enabled: true
+#     name: "Production Tempo"
+#     secretName: tempo-creds
+#     url: "http://tempo.monitoring:3200"

@@ -84,4 +84,55 @@ Create ServiceMonitor namespace
 {{- else }}
 {{- .Release.Namespace }}
 {{- end }}
-{{- end }} 
+{{- end }}
+
+{{/*
+Edge Proxy: fully qualified app name
+*/}}
+{{- define "nofire-edge.edgeProxy.fullname" -}}
+{{- printf "%s-edge-proxy" (include "nofire-edge.fullname" .) | trunc 63 | trimSuffix "-" }}
+{{- end }}
+
+{{/*
+Edge Proxy: common labels
+*/}}
+{{- define "nofire-edge.edgeProxy.labels" -}}
+helm.sh/chart: {{ include "nofire-edge.chart" . }}
+{{ include "nofire-edge.edgeProxy.selectorLabels" . }}
+{{- if .Chart.AppVersion }}
+app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
+{{- end }}
+app.kubernetes.io/managed-by: {{ .Release.Service }}
+{{- end }}
+
+{{/*
+Edge Proxy: selector labels
+*/}}
+{{- define "nofire-edge.edgeProxy.selectorLabels" -}}
+app.kubernetes.io/name: {{ include "nofire-edge.name" . }}
+app.kubernetes.io/instance: {{ .Release.Name }}
+app.kubernetes.io/component: edge-proxy
+{{- end }}
+
+{{/*
+Edge Proxy: image string
+*/}}
+{{- define "nofire-edge.edgeProxy.image" -}}
+{{- $repo := .Values.edgeProxy.image.repository | default "edge-proxy" -}}
+{{- $tag := .Values.edgeProxy.image.tag | default .Values.image.tag | default .Chart.AppVersion -}}
+{{- printf "%s:%s" $repo $tag }}
+{{- end }}
+
+{{/*
+Edge Proxy: service account name
+*/}}
+{{- define "nofire-edge.edgeProxy.serviceAccountName" -}}
+{{- include "nofire-edge.edgeProxy.fullname" . }}
+{{- end }}
+
+{{/*
+Edge Proxy: configmap name
+*/}}
+{{- define "nofire-edge.edgeProxy.configName" -}}
+{{- printf "%s-config" (include "nofire-edge.edgeProxy.fullname" .) }}
+{{- end }}

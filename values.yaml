@@ -274,3 +274,114 @@ nodeName:
   enabled: true
   # Field path for node name
   fieldPath: "spec.nodeName"
+
+# =============================================================================
+# Edge Proxy Configuration
+# =============================================================================
+# The edge proxy connects to Brain via gRPC and proxies observability queries
+# to on-prem data sources (Prometheus, Loki, Tempo, etc.).
+# Set enabled: true to deploy the edge proxy alongside the main agent.
+
+edgeProxy:
+  enabled: false
+
+  image:
+    repository: nofireai/edge-proxy
+    # tag: defaults to .Values.image.tag (shared version with main agent)
+    # pullPolicy: defaults to .Values.image.pullPolicy
+
+  replicaCount: 1
+
+  resources:
+    requests:
+      memory: "128Mi"
+      cpu: "100m"
+    limits:
+      memory: "256Mi"
+      cpu: "500m"
+
+  # Stream configuration (Brain gRPC connection)
+  stream:
+    serverAddress: ""          # Required: brain-host:443
+    useTLS: true
+    reconnectDelay: "1s"
+    maxReconnectDelay: "60s"
+    heartbeatInterval: "30s"
+    maxMessageSize: 16777216   # 16MB
+    maxConcurrent: 10
+    keepaliveTime: "30s"
+    keepaliveTimeout: "10s"
+    protocolVersion: 1
+
+  # HTTP client settings for backend connections
+  http:
+    timeout: "30s"
+    maxIdleConns: 100
+    retryMaxAttempts: 3
+
+  # PII redaction before data leaves customer infrastructure
+  redaction:
+    enabled: true
+    standardPII: true
+
+  # Health/metrics HTTP server port
+  serverPort: 8081
+
+  # Base path for K8s secret volume mounts inside the pod
+  secretsPath: "/etc/nofire/secrets"
+
+  # Service configuration
+  service:
+    type: ClusterIP
+    port: 8081
+    annotations: {}
+
+  # Probes
+  livenessProbe:
+    httpGet:
+      path: /healthz
+      port: 8081
+    initialDelaySeconds: 15
+    periodSeconds: 10
+  readinessProbe:
+    httpGet:
+      path: /healthz
+      port: 8081
+    initialDelaySeconds: 5
+    periodSeconds: 5
+
+# On-premises connections map (used when edgeProxy.enabled: true)
+#
+# Supported types: prometheus, loki, tempo, grafana, elasticsearch,
+#   open_search, mongodb_atlas, datadog, cloudwatch, google_cloud_logs,
+#   jaeger, alertmanager, github, gitlab, bitbucket, slack
+#
+# Each connection supports:
+#   type:           (required) backend type from list above
+#   enabled:        (optional, default: true) whether connection is active
+#   name:           (optional, default: key name) human-friendly display name
+#   secretName:     (optional) K8s secret name for credentials (username/password/token)
+#   url:            (required) backend service base URL
+#   orgId:          (optional) Loki multi-tenant org ID (X-Scope-OrgID header)
+#   index:          (optional) Elasticsearch/OpenSearch index pattern
+#   datasourceUID:  (optional) Tempo datasource UID
+#   tlsEnabled:     (optional) enable TLS for backend connection
+#   tlsSkipVerify:  (optional) skip backend TLS certificate verification
+#   caCertPath:     (optional) path to CA cert for backend TLS verification
+#
+# Example:
+# onPremConnections:
+#   prod-prometheus:
+#     type: prometheus
+#     enabled: true
+#     name: "Production Prometheus"
+#     secretName: prometheus-creds
+#     url: "http://prometheus:9090"
+#   prod-loki:
+#     type: loki
+#     enabled: true
+#     name: "Production Loki"
+#     secretName: loki-creds
+#     url: "http://loki:3100"
+#     orgId: "tenant1"
+onPremConnections: {}
