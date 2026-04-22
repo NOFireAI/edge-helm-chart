@@ -244,7 +244,7 @@ config:
     enableCompression: true
     graph:
       url: "https://my.nofire.ai/api/edge"
-      interval: "1m"
+      interval: "5m"
     heartbeat:
       url: ""
       interval: "10s"
