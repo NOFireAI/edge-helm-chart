@@ -354,20 +354,26 @@ edgeProxy:
 #
 # Supported types: prometheus, loki, tempo, grafana, elasticsearch,
 #   open_search, mongodb_atlas, datadog, cloudwatch, google_cloud_logs,
-#   jaeger, alertmanager, github, gitlab, bitbucket, slack
+#   jaeger, alertmanager, github, gitlab, bitbucket, slack, custom_http, postgres
 #
 # Each connection supports:
 #   type:           (required) backend type from list above
 #   enabled:        (optional, default: true) whether connection is active
 #   name:           (optional, default: key name) human-friendly display name
 #   secretName:     (optional) K8s secret name for credentials (username/password/token)
-#   url:            (required) backend service base URL
+#   url:            (required for most types) backend service base URL
 #   orgId:          (optional) Loki multi-tenant org ID (X-Scope-OrgID header)
 #   index:          (optional) Elasticsearch/OpenSearch index pattern
 #   datasourceUID:  (optional) Tempo datasource UID
 #   tlsEnabled:     (optional) enable TLS for backend connection
 #   tlsSkipVerify:  (optional) skip backend TLS certificate verification
 #   caCertPath:     (optional) path to CA cert for backend TLS verification
+#
+# Postgres connections use DB fields instead of url:
+#   dbHost:         (required) database hostname
+#   dbPort:         (optional, default: 5432) database port
+#   dbName:         (required) database name
+#   dbSSLMode:      (optional) sslmode (e.g. disable, require, verify-full)
 #
 # Example:
 # onPremConnections:
@@ -384,4 +390,19 @@ edgeProxy:
 #     secretName: loki-creds
 #     url: "http://loki:3100"
 #     orgId: "tenant1"
+#   prod-postgres:
+#     type: postgres
+#     enabled: true
+#     name: "Production Postgres"
+#     secretName: postgres-creds
+#     dbHost: "postgres.default.svc.cluster.local"
+#     dbPort: 5432
+#     dbName: "app"
+#     dbSSLMode: "require"
+#   internal-api:
+#     type: custom_http
+#     enabled: true
+#     name: "Internal API"
+#     secretName: internal-api-creds
+#     url: "https://api.internal.example.com"
 onPremConnections: {}

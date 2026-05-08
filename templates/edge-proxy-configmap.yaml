@@ -43,6 +43,14 @@ data:
           "secretName": {{ $conn.secretName | quote }},
           {{- end }}
           "details": {
+            {{- if eq ($conn.type | default "" | lower) "postgres" }}
+            "dbHost": {{ $conn.dbHost | quote }},
+            "dbPort": {{ $conn.dbPort | default 5432 | int }},
+            "dbName": {{ $conn.dbName | quote }}
+            {{- if $conn.dbSSLMode }},
+            "dbSSLMode": {{ $conn.dbSSLMode | quote }}
+            {{- end }}
+            {{- else }}
             "url": {{ $conn.url | quote }}
             {{- if $conn.orgId }},
             "orgId": {{ $conn.orgId | quote }}
@@ -61,6 +69,7 @@ data:
             {{- end }}
             {{- if $conn.caCertPath }},
             "caCertPath": {{ $conn.caCertPath | quote }}
+            {{- end }}
             {{- end }}
           }
         }
