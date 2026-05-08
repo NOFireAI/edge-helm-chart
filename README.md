@@ -33,6 +33,50 @@ helm install nofire-edge nofire/nofire-edge \
 | `service.clusterIP` | Static ClusterIP (recommended) | `""` | No |
 | `monitoring.serviceMonitor.enabled` | Enable Prometheus ServiceMonitor | `false` | No |
 
+## Edge Proxy (On-Prem Connections)
+
+To proxy requests from Brain to on-prem/internal backends, enable `edgeProxy` and configure `onPremConnections`.
+
+**Prerequisites:**
+
+- Create the `nofire-credentials` secret (used for Brain authentication):
+
+```bash
+kubectl create secret generic nofire-credentials --from-literal=api-key=YOUR_KEY -n nofire-system
+```
+
+**Supported connection types include** `prometheus`, `loki`, `tempo`, `grafana`, `elasticsearch`, `open_search`, `mongodb_atlas`, `custom_http`, `postgres`, and others.
+
+**Example:**
+
+```yaml
+edgeProxy:
+  enabled: true
+  stream:
+    serverAddress: "brain-host:443"
+
+onPremConnections:
+  prod-postgres:
+    type: postgres
+    name: "Production Postgres"
+    secretName: postgres-creds
+    dbHost: "postgres.default.svc.cluster.local"
+    dbPort: 5432
+    dbName: "app"
+    dbSSLMode: "require"
+
+  internal-api:
+    type: custom_http
+    name: "Internal API"
+    secretName: internal-api-creds
+    url: "https://api.internal.example.com"
+```
+
+**Notes:**
+
+- `secretName` is optional, but recommended. The secret is mounted under `edgeProxy.secretsPath` and used for credentials (token/username/password).
+- For `postgres`, the chart renders DB fields (`dbHost`, `dbPort`, `dbName`, `dbSSLMode`) instead of `url`.
+
 ## Advanced Installation with Static IP
 
 For production deployments, it's recommended to use a static ClusterIP:

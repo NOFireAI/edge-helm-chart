@@ -238,3 +238,22 @@ onPremConnections:
     name: "Production Tempo"
     secretName: tempo-creds
     url: "http://tempo.monitoring:3200"
+
+  # New: Postgres via Edge Proxy (read-only queries tunneled over /v1/query)
+  prod-postgres:
+    type: postgres
+    enabled: true
+    name: "Production Postgres"
+    secretName: postgres-creds
+    dbHost: "postgres.default.svc.cluster.local"
+    dbPort: 5432
+    dbName: "app"
+    dbSSLMode: "require"
+
+  # New: Custom HTTP via Edge Proxy (generic internal HTTP APIs)
+  internal-api:
+    type: custom_http
+    enabled: true
+    name: "Internal API"
+    secretName: internal-api-creds
+    url: "https://api.internal.example.com"
