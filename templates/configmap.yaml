@@ -85,5 +85,12 @@ data:
           "url": {{ .Values.config.publisher.heartbeat.url | default "" | quote }},
           "interval": {{ .Values.config.publisher.heartbeat.interval | quote }}
         }
+      },
+      "netobs": {
+        "enabled": {{ .Values.config.netobs.enabled | default false }},
+        "interval": {{ .Values.config.netobs.interval | default "60s" | quote }},
+        "prometheusUrl": {{ .Values.config.netobs.prometheusUrl | default "" | quote }},
+        "source": {{ .Values.config.netobs.source | default "" | quote }},
+        "prometheusTimeout": {{ .Values.config.netobs.prometheusTimeout | default "10s" | quote }}
       }
     }

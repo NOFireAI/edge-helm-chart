@@ -233,6 +233,15 @@ config:
     #   timeout: "5s"
     #   contentType: "protobuf:dnstap.Dnstap"
 
+  # Network observability — L7 dependency detection via Hubble, Istio, or Caretta.
+  # Auto-detects available source when source is empty (hubble > istio > caretta).
+  netobs:
+    enabled: false
+    interval: "60s"
+    prometheusUrl: ""       # empty = in-cluster discovery
+    source: ""              # empty = auto-detect; or "hubble" | "istio" | "caretta"
+    prometheusTimeout: "10s"
+
   # Publishing configuration
   enablePublishing: true
   publisher:
