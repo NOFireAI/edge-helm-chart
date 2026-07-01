@@ -238,6 +238,14 @@ config:
   publisher:
     # REQUIRED: API key for authentication (must be set to a valid value)
     # apiKey: "your-api-key-here"
+    # Source the API key from an existing Secret (via the NOFIRE_API_KEY env var)
+    # instead of baking apiKey into the config.json ConfigMap in plaintext. When
+    # enabled the chart does NOT render templates/secret.yaml — the named Secret is
+    # expected to already exist (e.g. created by External Secrets Operator).
+    apiKeySecret:
+      enabled: false
+      name: nofire-credentials
+      key: api-key
     timeout: "30s"
     maxRetries: 3
     retryDelay: "5s"

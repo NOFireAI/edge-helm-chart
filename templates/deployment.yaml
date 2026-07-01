@@ -61,6 +61,13 @@ spec:
             {{- end }}
             - name: PORT
               value: {{ .Values.config.serverPort | quote }}
+            {{- if .Values.config.publisher.apiKeySecret.enabled }}
+            - name: NOFIRE_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.config.publisher.apiKeySecret.name }}
+                  key: {{ .Values.config.publisher.apiKeySecret.key }}
+            {{- end }}
             {{- with .Values.env }}
             {{- toYaml . | nindent 12 }}
             {{- end }}

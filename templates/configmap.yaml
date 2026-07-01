@@ -72,7 +72,7 @@ data:
       },
       "enablePublishing": {{ .Values.config.enablePublishing }},
       "publisher": {
-        "apiKey": {{ .Values.config.publisher.apiKey | default "" | quote }},
+        "apiKey": {{ if .Values.config.publisher.apiKeySecret.enabled }}"{NOFIRE_API_KEY}"{{ else }}{{ .Values.config.publisher.apiKey | default "" | quote }}{{ end }},
         "timeout": {{ .Values.config.publisher.timeout | quote }},
         "maxRetries": {{ .Values.config.publisher.maxRetries }},
         "retryDelay": {{ .Values.config.publisher.retryDelay | quote }},
