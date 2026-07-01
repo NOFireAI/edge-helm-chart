@@ -38,34 +38,9 @@ spec:
       securityContext:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-      {{- if or .Values.initContainers .Values.config.publisher.apiKeySecret.enabled }}
+      {{- with .Values.initContainers }}
       initContainers:
-        {{- with .Values.initContainers }}
         {{- toYaml . | nindent 8 }}
-        {{- end }}
-        {{- if .Values.config.publisher.apiKeySecret.enabled }}
-        # Substitutes the API key from the Secret into config.json and writes it
-        # to an in-memory (tmpfs) volume. The main /nofire-edge binary does not
-        # expand env placeholders itself, so the key is injected here — it never
-        # lands in a persisted ConfigMap, in git, or on node disk.
-        - name: render-config
-          image: {{ .Values.config.publisher.apiKeySecret.initImage }}
-          command: ["sh", "-c"]
-          args:
-            - sed "s|{NOFIRE_API_KEY}|${NOFIRE_API_KEY}|g" /tmp/config-src/config.json > /etc/nofire-edge/config.json
-          env:
-            - name: NOFIRE_API_KEY
-              valueFrom:
-                secretKeyRef:
-                  name: {{ .Values.config.publisher.apiKeySecret.name }}
-                  key: {{ .Values.config.publisher.apiKeySecret.key }}
-          volumeMounts:
-            - name: client-config
-              mountPath: /tmp/config-src
-              readOnly: true
-            - name: rendered-config
-              mountPath: /etc/nofire-edge
-        {{- end }}
       {{- end }}
       containers:
         - name: {{ .Chart.Name }}
@@ -86,6 +61,13 @@ spec:
             {{- end }}
             - name: PORT
               value: {{ .Values.config.serverPort | quote }}
+            {{- if .Values.config.publisher.apiKeySecret.enabled }}
+            - name: NOFIRE_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.config.publisher.apiKeySecret.name }}
+                  key: {{ .Values.config.publisher.apiKeySecret.key }}
+            {{- end }}
             {{- with .Values.env }}
             {{- toYaml . | nindent 12 }}
             {{- end }}
@@ -106,7 +88,7 @@ spec:
             {{- toYaml . | nindent 12 }}
           {{- end }}
           volumeMounts:
-            - name: {{ ternary "rendered-config" "client-config" .Values.config.publisher.apiKeySecret.enabled }}
+            - name: client-config
               mountPath: /etc/nofire-edge
               readOnly: true
             {{- with .Values.extraVolumeMounts }}
@@ -119,13 +101,6 @@ spec:
         - name: client-config
           configMap:
             name: {{ include "nofire-edge.configName" . }}
-        {{- if .Values.config.publisher.apiKeySecret.enabled }}
-        # tmpfs (RAM) — holds the rendered config.json with the real key; never
-        # written to node disk, gone when the pod dies.
-        - name: rendered-config
-          emptyDir:
-            medium: Memory
-        {{- end }}
         {{- with .Values.extraVolumes }}
         {{- toYaml . | nindent 8 }}
         {{- end }}
