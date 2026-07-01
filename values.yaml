@@ -246,6 +246,9 @@ config:
       enabled: false
       name: nofire-credentials
       key: api-key
+      # Init container that renders the key into the config on a tmpfs volume.
+      # Needs a shell + sed (busybox); the main image is distroless.
+      initImage: busybox:1.37
     timeout: "30s"
     maxRetries: 3
     retryDelay: "5s"
