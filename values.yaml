@@ -310,7 +310,7 @@ edgeProxy:
 
   # Stream configuration (Brain gRPC connection)
   stream:
-    serverAddress: ""          # Required: brain-host:443
+    serverAddress: "edge.nofire.ai:443"
     useTLS: true
     reconnectDelay: "1s"
     maxReconnectDelay: "60s"
