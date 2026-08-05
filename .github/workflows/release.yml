@@ -16,6 +16,11 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          # Do not leave the job token in .git/config as an http.extraheader:
+          # `helm package .` would ship it inside the chart. Nothing here pushes
+          # over git — `gh release create` authenticates via GH_TOKEN.
+          persist-credentials: false
 
       - name: Install Helm
         uses: azure/setup-helm@v4
@@ -41,6 +46,24 @@ jobs:
       - name: Package chart
         if: steps.check.outputs.exists == 'false'
         run: helm package .
+
+      # This packaging fault shipped silently once (0.5.1 was 1.4MB of .git and
+      # nested tarballs, over helm's 1MiB release-secret limit, and carried the
+      # CI token). Fail loudly rather than publish it again.
+      - name: Verify packaged chart
+        if: steps.check.outputs.exists == 'false'
+        run: |
+          pkg="${{ steps.chart.outputs.name }}-${{ steps.chart.outputs.version }}.tgz"
+          if tar tzf "$pkg" | grep -qE '(^|/)\.git(/|$)'; then
+            echo "::error::$pkg contains .git — packaging leak"
+            exit 1
+          fi
+          size=$(wc -c < "$pkg")
+          if [ "$size" -gt 524288 ]; then
+            echo "::error::$pkg is ${size} bytes (>512KB) — packaging leak?"
+            exit 1
+          fi
+          echo "$pkg is ${size} bytes"
 
       - name: Create GitHub Release
         if: steps.check.outputs.exists == 'false'

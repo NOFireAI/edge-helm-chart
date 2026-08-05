@@ -1,0 +1,33 @@
+# Patterns to ignore when building packages.
+# This supports shell glob matching, relative path matching, and
+# negation (prefixed with !). Only one pattern per line.
+#
+# `helm package .` runs at the repo root, so without this file the packaged
+# chart is the entire checkout — including .git/ (which carries the CI token
+# as an http.extraheader) and any previously packaged .tgz.
+.DS_Store
+# Common VCS dirs. No trailing slash on .git: in a git worktree it is a *file*
+# (`gitdir: …`), not a directory, and a dir-only pattern would let it through.
+.git
+.gitignore
+.bzr/
+.bzrignore
+.hg/
+.hgignore
+.svn/
+# CI config is not chart content
+.github/
+# Previously packaged charts — these nest, so each release bundles the last
+*.tgz
+docs/
+# Common backup files
+*.swp
+*.bak
+*.tmp
+*.orig
+*~
+# Various IDEs
+.project
+.idea/
+*.tmproj
+.vscode/
