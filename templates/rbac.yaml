@@ -7,7 +7,7 @@ metadata:
     {{- include "nofire-edge.labels" . | nindent 4 }}
 rules:
 - apiGroups: [""]
-  resources: ["pods", "services", "configmaps", "secrets", "persistentvolumeclaims", "persistentvolumes", "nodes", "namespaces", "resourcequotas", "limitranges"]
+  resources: ["pods", "services", "endpoints", "configmaps", "secrets", "persistentvolumeclaims", "persistentvolumes", "nodes", "namespaces", "resourcequotas", "limitranges"]
   verbs: ["get", "list", "watch"]
 - apiGroups: ["apps"]
   resources: ["deployments", "statefulsets", "daemonsets", "replicasets"]
