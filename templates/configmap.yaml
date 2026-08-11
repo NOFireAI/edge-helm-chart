@@ -92,5 +92,25 @@ data:
         "prometheusUrl": {{ .Values.config.netobs.prometheusUrl | default "" | quote }},
         "source": {{ .Values.config.netobs.source | default "" | quote }},
         "prometheusTimeout": {{ .Values.config.netobs.prometheusTimeout | default "10s" | quote }}
+      },
+      "configMapCapture": {
+        "clearText": {{ .Values.config.configMapCapture.clearText | default false }},
+        "captureCap": {{ .Values.config.configMapCapture.captureCap | default 4096 }},
+        "redactKeyPatterns": [
+          {{- range $index, $pattern := .Values.config.configMapCapture.redactKeyPatterns }}
+          {{- if $index }},{{ end }}
+          {{ $pattern | quote }}
+          {{- end }}
+        ]
+      },
+      "envCapture": {
+        "clearText": {{ .Values.config.envCapture.clearText | default false }},
+        "captureCap": {{ .Values.config.envCapture.captureCap | default 4096 }},
+        "redactKeyPatterns": [
+          {{- range $index, $pattern := .Values.config.envCapture.redactKeyPatterns }}
+          {{- if $index }},{{ end }}
+          {{ $pattern | quote }}
+          {{- end }}
+        ]
       }
     }

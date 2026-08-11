@@ -6,8 +6,10 @@
 image:
   repository: nofireai/edge
   pullPolicy: Always
-  # Overrides the image tag whose default is the chart appVersion.
-  tag: "latest"
+  # Overrides the image tag, which otherwise defaults to the chart appVersion.
+  # Released tags carry the "v" prefix (nofireai/edge:v3.6.0) — a bare "3.6.0"
+  # does not exist in the registry.
+  tag: "v3.6.0"
 
 # Image pull secrets
 imagePullSecrets: []
@@ -192,6 +194,7 @@ config:
       - "pods"
       - "nodes"
       - "k8services"
+      - "endpoints"
       - "configmaps"
       - "secrets"
       - "persistentvolumeclaims"
@@ -265,6 +268,33 @@ config:
     heartbeat:
       url: ""
       interval: "10s"
+
+  # ConfigMap value capture. Hash-by-default so raw customer configuration never
+  # leaves the cluster. Set clearText: true to send values verbatim (still
+  # subject to redactKeyPatterns and captureCap).
+  configMapCapture:
+    # false (default): every ConfigMap value is sent as a sha256 hash.
+    # true: values are sent in the clear, except keys matching redactKeyPatterns.
+    clearText: false
+    # In clear-text mode, ConfigMap data keys matching any of these regexes are
+    # hashed instead of sent verbatim (e.g. secrets embedded in a ConfigMap).
+    redactKeyPatterns: []
+    # - "(?i)(password|passwd|secret|token|apikey|api_key|private_key)"
+    # Per-value byte cap for clear-text values. Values over the cap are trimmed
+    # (Brain is told the value was trimmed). Hashes always cover the full value.
+    captureCap: 4096
+
+  # Container env-var value capture. Hash-by-default so a plaintext credential in
+  # an env var never leaves the cluster. Same model as configMapCapture.
+  envCapture:
+    # false (default): every literal env value is sent as a sha256 hash.
+    # true: literal values are sent in the clear, except names matching redactKeyPatterns.
+    clearText: false
+    # In clear-text mode, env var names matching any of these regexes stay hashed.
+    redactKeyPatterns: []
+    # - "(?i)(password|passwd|secret|token|apikey|api_key|private_key)"
+    # Per-value byte cap for clear-text values (over-cap values trimmed, flagged).
+    captureCap: 4096
 
 # Environment variables
 env: []
