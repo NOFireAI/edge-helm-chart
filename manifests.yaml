@@ -19,7 +19,7 @@ spec:
       restartPolicy: Always
       containers:
       - name: client  
-        image: nofireai/edge:latest
+        image: nofireai/edge:v3.6.0
         imagePullPolicy: IfNotPresent
         command: ["/nofire-edge"]
         args: ["--config", "/etc/nofire-edge/config.json"]
