@@ -163,3 +163,7 @@ Complete installation guide, DNSTap configuration, and advanced settings:
 For issues and questions:
 - Documentation: https://docs.nofire.ai
 - Email: team@nofire.ai
+
+## AI policy
+
+AI-assisted development is welcome in edge-helm-chart. See [AI_POLICY.md](AI_POLICY.md).
