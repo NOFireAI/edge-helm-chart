@@ -73,22 +73,20 @@ service:
   targetPort: 8080
   annotations: {}
 
-# Ingress configuration
-ingress:
-  enabled: false
-  className: ""
-  annotations: {}
-    # kubernetes.io/ingress.class: nginx
-    # kubernetes.io/tls-acme: "true"
-  hosts:
-    - host: k8s-resource-graph-client.local
-      paths:
-        - path: /
-          pathType: Prefix
-  tls: []
-  #  - secretName: chart-example-tls
-  #    hosts:
-  #      - chart-example.local
+# NetworkPolicy for the agent pod. Allows ingress only to the HTTP port
+# (kubelet probes, Prometheus scraping /metrics) and the dnstap port (CoreDNS).
+# Egress is not restricted. Empty peer lists allow any source on that port;
+# when restricting httpFrom, check your CNI still admits kubelet probes.
+networkPolicy:
+  enabled: true
+  httpFrom: []
+  # - namespaceSelector:
+  #     matchLabels:
+  #       kubernetes.io/metadata.name: monitoring
+  dnstapFrom: []
+  # - namespaceSelector:
+  #     matchLabels:
+  #       kubernetes.io/metadata.name: kube-system
 
 # Resource limits and requests
 resources:
