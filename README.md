@@ -32,6 +32,20 @@ helm install nofire-edge nofire/nofire-edge \
 | `config.publisher.graph.url` | NOFire API endpoint | `https://my.nofire.ai/api/edge` | No |
 | `service.clusterIP` | Static ClusterIP (recommended) | `""` | No |
 | `monitoring.serviceMonitor.enabled` | Enable Prometheus ServiceMonitor | `false` | No |
+| `networkPolicy.enabled` | Restrict agent ingress to the HTTP and dnstap ports | `true` | No |
+| `networkPolicy.httpFrom` / `networkPolicy.dnstapFrom` | NetworkPolicy peers allowed on each port (empty = any) | `[]` | No |
+
+## Accessing the graph
+
+The Service exposes only `/healthz`, `/metrics` and dnstap. The graph and admin
+endpoints (`/graph`, `/graph/dot`, `/graph/stats`, `/admin/log-level`,
+`/debug/pod-cache`) listen on `127.0.0.1:8082` inside the pod (edge `adminPort`).
+Reach them with a pod port-forward:
+
+```bash
+kubectl port-forward -n nofire-system deploy/nofire-edge 8082:8082
+curl localhost:8082/graph/stats
+```
 
 ## Edge Proxy (On-Prem Connections)
 

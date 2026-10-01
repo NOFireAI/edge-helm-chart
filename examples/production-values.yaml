@@ -76,10 +76,10 @@ config:
     retryDelay: "10s"
     enableCompression: true
     graph:
-      url: "https://webhook.site/5de2c1ca-fb19-4ca7-a8e1-1e422941e5ab"
+      url: "https://my.nofire.ai/api/edge"
       interval: "2m"
     heartbeat:
-      url: "https://webhook.site/5de2c1ca-fb19-4ca7-a8e1-1e422941e5ab"
+      url: ""
       interval: "30s"
   
   # Services configuration for service discovery and dependency tracking
@@ -127,24 +127,6 @@ affinity:
             values:
             - nofire-edge
         topologyKey: kubernetes.io/hostname
-
-# Enable ingress for external access
-ingress:
-  enabled: true
-  className: "nginx"
-  annotations:
-    nginx.ingress.kubernetes.io/ssl-redirect: "true"
-    nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
-    cert-manager.io/cluster-issuer: "letsencrypt-prod"
-  hosts:
-    - host: nofire-edge.production.com
-      paths:
-        - path: /
-          pathType: Prefix
-  tls:
-    - secretName: nofire-edge-tls
-      hosts:
-        - nofire-edge.production.com 
 
 podDisruptionBudget:
   enabled: true
