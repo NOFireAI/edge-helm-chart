@@ -25,7 +25,24 @@ data:
           {{- end }}
         ]
         {{- $nf := pick (.Values.config.kube.namespaceFilter | default dict) "mode" "namespaces" }}
-        {{- if $nf }},
+        {{- if $nf }}
+        {{- /* Mirror the Edge's validation so a bad filter fails at install, not as a crashloop. */}}
+        {{- $mode := printf "%v" (get $nf "mode" | default "") }}
+        {{- $namespaces := get $nf "namespaces" | default list }}
+        {{- if not (kindIs "slice" $namespaces) }}
+        {{- fail "config.kube.namespaceFilter.namespaces must be a list" }}
+        {{- end }}
+        {{- if has $mode (list "" "none") }}
+        {{- if $namespaces }}
+        {{- fail (printf "config.kube.namespaceFilter.namespaces is set but mode %q disables filtering; set config.kube.namespaceFilter.mode to 'allow' or 'deny'" $mode) }}
+        {{- end }}
+        {{- else if has $mode (list "allow" "deny") }}
+        {{- if not $namespaces }}
+        {{- fail (printf "config.kube.namespaceFilter.mode is %q but config.kube.namespaceFilter.namespaces is empty" $mode) }}
+        {{- end }}
+        {{- else }}
+        {{- fail (printf "config.kube.namespaceFilter.mode must be one of '', 'none', 'allow', 'deny' (got %q)" $mode) }}
+        {{- end }},
         "namespaceFilter": {{ $nf | toJson }}
         {{- end }}
       },

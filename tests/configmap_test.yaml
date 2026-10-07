@@ -11,3 +11,25 @@ tests:
           pattern: -config$
       - exists:
           path: data["config.json"]
+
+  - it: fails when namespaces are set without a mode
+    set:
+      config.kube.namespaceFilter.namespaces: [a]
+    asserts:
+      - failedTemplate:
+          errorPattern: config\.kube\.namespaceFilter\.mode
+
+  - it: fails when mode is allow with no namespaces
+    set:
+      config.kube.namespaceFilter.mode: allow
+    asserts:
+      - failedTemplate:
+          errorPattern: config\.kube\.namespaceFilter\.namespaces
+
+  - it: fails on an unknown mode
+    set:
+      config.kube.namespaceFilter.mode: bogus
+      config.kube.namespaceFilter.namespaces: [a]
+    asserts:
+      - failedTemplate:
+          errorPattern: config\.kube\.namespaceFilter\.mode
