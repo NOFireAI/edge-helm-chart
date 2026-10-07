@@ -95,11 +95,10 @@ data:
         {{- end }},
         "edgeExistenceTtl": {{ .Values.config.netobs.edgeExistenceTtl | quote }}
         {{- end }}
-        {{- if and (hasKey .Values.config.netobs "excludeNamespaces") (not (kindIs "invalid" .Values.config.netobs.excludeNamespaces)) }}
-        {{- if not (kindIs "slice" .Values.config.netobs.excludeNamespaces) }}
-        {{- fail "config.netobs.excludeNamespaces must be a list" }}
-        {{- end }},
-        "excludeNamespaces": {{ .Values.config.netobs.excludeNamespaces | toJson }}
+        {{- $netobsEx := dict }}
+        {{- $_ := include "nofire-edge.typedPick" (dict "src" .Values.config.netobs "path" "config.netobs" "out" $netobsEx "spec" (dict "excludeNamespaces" "strlist")) }}
+        {{- if hasKey $netobsEx "excludeNamespaces" }},
+        "excludeNamespaces": {{ $netobsEx.excludeNamespaces | toJson }}
         {{- end }}
       },
       {{- $cmc := .Values.config.configMapCapture | default dict }}

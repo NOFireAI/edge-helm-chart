@@ -33,3 +33,10 @@ tests:
     asserts:
       - failedTemplate:
           errorPattern: must be one of
+
+  - it: fails on a non-string excludeNamespaces entry
+    set:
+      config.netobs.excludeNamespaces: [1, 2]
+    asserts:
+      - failedTemplate:
+          errorPattern: excludeNamespaces entry 1 must be a string
