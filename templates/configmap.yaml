@@ -24,6 +24,10 @@ data:
           {{ $resource | quote }}
           {{- end }}
         ]
+        {{- $nf := pick (.Values.config.kube.namespaceFilter | default dict) "mode" "namespaces" }}
+        {{- if $nf }},
+        "namespaceFilter": {{ $nf | toJson }}
+        {{- end }}
       },
       "enableCausalAnalysis": {{ .Values.config.enableCausalAnalysis }},
       "causal": {

@@ -1,0 +1,1 @@
+.kube.namespaceFilter == {"mode": "none"}
