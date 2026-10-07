@@ -82,35 +82,13 @@ data:
         {{ $k | quote }}: {{ $v | toJson }}
         {{- $first = false }}
         {{- end }}
-        {{- if kindIs "map" $s.tls }}
+        {{- range $name, $keys := dict "tls" (list "enabled" "certFile" "keyFile" "caFile" "requireClientCert" "minVersion" "cipherSuites") "compression" (list "enabled" "type" "level") "handshake" (list "timeout" "contentType") }}
+        {{- $obj := include "nofire-edge.pickSet" (dict "src" (get $s $name) "keys" $keys) | fromJson }}
+        {{- if $obj }}
         {{- if not $first }},{{ end }}
-        "tls": {
-          "enabled": {{ $s.tls.enabled | default false }},
-          "certFile": {{ $s.tls.certFile | default "" | quote }},
-          "keyFile": {{ $s.tls.keyFile | default "" | quote }},
-          "caFile": {{ $s.tls.caFile | default "" | quote }},
-          "requireClientCert": {{ $s.tls.requireClientCert | default false }},
-          "minVersion": {{ $s.tls.minVersion | default "" | quote }},
-          "cipherSuites": {{ $s.tls.cipherSuites | default list | toJson }}
-        }
+        {{ $name | quote }}: {{ $obj | toJson }}
         {{- $first = false }}
         {{- end }}
-        {{- if kindIs "map" $s.compression }}
-        {{- if not $first }},{{ end }}
-        "compression": {
-          "enabled": {{ $s.compression.enabled | default false }},
-          "type": {{ $s.compression.type | default "" | quote }},
-          "level": {{ $s.compression.level | default -1 }}
-        }
-        {{- $first = false }}
-        {{- end }}
-        {{- if kindIs "map" $s.handshake }}
-        {{- if not $first }},{{ end }}
-        "handshake": {
-          "timeout": {{ $s.handshake.timeout | default "" | quote }},
-          "contentType": {{ $s.handshake.contentType | default "" | quote }}
-        }
-        {{- $first = false }}
         {{- end }}
       },
       "enablePublishing": {{ .Values.config.enablePublishing }},
