@@ -62,3 +62,18 @@ tests:
     asserts:
       - failedTemplate:
           errorPattern: edgeExistenceTtl "30" is not a valid duration
+
+  - it: accepts Go duration syntax for edgeExistenceTtl
+    set:
+      config.netobs.edgeExistenceTtl: -1h30m
+    asserts:
+      - matchRegex:
+          path: data["config.json"]
+          pattern: '"edgeExistenceTtl": "-1h30m"'
+
+  - it: fails on an unknown namespaceFilter key
+    set:
+      config.kube.namespaceFilter.node: allow
+    asserts:
+      - failedTemplate:
+          errorPattern: namespaceFilter has unknown key "node"

@@ -28,6 +28,11 @@ data:
         {{- if and (hasKey .Values.config.kube "namespaceFilter") (not (kindIs "invalid" $nfRaw)) (not (kindIs "map" $nfRaw)) }}
         {{- fail "config.kube.namespaceFilter must be a map" }}
         {{- end }}
+        {{- range $key, $_ := $nfRaw }}
+        {{- if not (has $key (list "mode" "namespaces")) }}
+        {{- fail (printf "config.kube.namespaceFilter has unknown key %q; supported keys are mode and namespaces" $key) }}
+        {{- end }}
+        {{- end }}
         {{- $nf := dict }}
         {{- $_ := include "nofire-edge.typedPick" (dict "src" $nfRaw "path" "config.kube.namespaceFilter" "out" $nf "spec" (dict "mode" "string" "namespaces" "strlist")) }}
         {{- if $nf }}
