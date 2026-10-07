@@ -1,0 +1,13 @@
+suite: configmap
+templates:
+  - templates/configmap.yaml
+tests:
+  - it: renders a config.json ConfigMap with defaults
+    asserts:
+      - isKind:
+          of: ConfigMap
+      - matchRegex:
+          path: metadata.name
+          pattern: -config$
+      - exists:
+          path: data["config.json"]

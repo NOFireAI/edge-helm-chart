@@ -31,3 +31,6 @@ docs/
 .idea/
 *.tmproj
 .vscode/
+# Tests and CI helpers are not chart content
+tests/
+ci/
