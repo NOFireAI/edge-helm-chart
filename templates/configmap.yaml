@@ -102,21 +102,23 @@ data:
         "excludeNamespaces": {{ .Values.config.netobs.excludeNamespaces | toJson }}
         {{- end }}
       },
+      {{- $cmc := .Values.config.configMapCapture | default dict }}
       "configMapCapture": {
-        "clearText": {{ .Values.config.configMapCapture.clearText | default false }},
-        "captureCap": {{ .Values.config.configMapCapture.captureCap | default 4096 }},
+        "clearText": {{ $cmc.clearText | default false }},
+        "captureCap": {{ $cmc.captureCap | default 4096 }},
         "redactKeyPatterns": [
-          {{- range $index, $pattern := .Values.config.configMapCapture.redactKeyPatterns }}
+          {{- range $index, $pattern := $cmc.redactKeyPatterns }}
           {{- if $index }},{{ end }}
           {{ $pattern | quote }}
           {{- end }}
         ]
       },
+      {{- $envc := .Values.config.envCapture | default dict }}
       "envCapture": {
-        "clearText": {{ .Values.config.envCapture.clearText | default false }},
-        "captureCap": {{ .Values.config.envCapture.captureCap | default 4096 }},
+        "clearText": {{ $envc.clearText | default false }},
+        "captureCap": {{ $envc.captureCap | default 4096 }},
         "redactKeyPatterns": [
-          {{- range $index, $pattern := .Values.config.envCapture.redactKeyPatterns }}
+          {{- range $index, $pattern := $envc.redactKeyPatterns }}
           {{- if $index }},{{ end }}
           {{ $pattern | quote }}
           {{- end }}

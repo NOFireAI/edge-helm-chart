@@ -5,12 +5,14 @@
 # A case dir holds values.yaml plus either:
 #   expect.jq    a jq program run against config.json; must print true
 #   expect-fail  a regex the `helm template` stderr must match (render must fail)
+# A case with a `replace-values` file renders with values.yaml INSTEAD of the
+# chart defaults, like `helm upgrade --reuse-values` from an older release.
 # With EDGE_SRC set to an Edge checkout, every rendered config.json must also be
 # accepted by the Edge's own config loader (see edgecheck/).
 set -euo pipefail
 
 here="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-chart="$(cd "$here/../.." && pwd)"
+chart_root="$(cd "$here/../.." && pwd)"
 filter="${1:-}"
 [[ -n "${EDGE_SRC:-}" ]] && EDGE_SRC="$(cd "$EDGE_SRC" && pwd)"
 tmp="$(mktemp -d)"
@@ -36,8 +38,17 @@ for dir in "$here"/cases/*/; do
   name="$(basename "$dir")"
   [[ -n "$filter" && "$name" != *"$filter"* ]] && continue
 
+  chart="$chart_root"
+  vals=(-f "$dir/values.yaml")
+  if [[ -f "$dir/replace-values" ]]; then
+    chart="$tmp/chart-$name"
+    cp -R "$chart_root" "$chart"
+    cp "$dir/values.yaml" "$chart/values.yaml"
+    vals=()
+  fi
+
   if [[ -f "$dir/expect-fail" ]]; then
-    if out="$(helm template t "$chart" -f "$dir/values.yaml" -s templates/configmap.yaml 2>&1)"; then
+    if out="$(helm template t "$chart" ${vals[@]+"${vals[@]}"} -s templates/configmap.yaml 2>&1)"; then
       report FAIL "$name" "render succeeded, expected failure"
     elif grep -Eq "$(cat "$dir/expect-fail")" <<<"$out"; then
       report PASS "$name"
@@ -47,7 +58,7 @@ for dir in "$here"/cases/*/; do
     continue
   fi
 
-  if ! out="$(helm template t "$chart" -f "$dir/values.yaml" -s templates/configmap.yaml 2>&1)"; then
+  if ! out="$(helm template t "$chart" ${vals[@]+"${vals[@]}"} -s templates/configmap.yaml 2>&1)"; then
     report FAIL "$name" "render failed: $out"
     continue
   fi

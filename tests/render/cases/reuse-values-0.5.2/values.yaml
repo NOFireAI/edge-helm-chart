@@ -1,0 +1,425 @@
+# Default values for nofire-edge.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+# Image configuration
+image:
+  repository: nofireai/edge
+  pullPolicy: Always
+  # Overrides the image tag whose default is the chart appVersion.
+  tag: "latest"
+
+# Image pull secrets
+imagePullSecrets: []
+
+# Override name and fullname
+nameOverride: ""
+fullnameOverride: ""
+
+# Number of replicas
+replicaCount: 1
+
+# Deployment strategy
+strategy:
+  type: RollingUpdate
+  rollingUpdate:
+    maxUnavailable: 1
+    maxSurge: 1
+
+# Service account configuration
+serviceAccount:
+  # Specifies whether a service account should be created
+  create: true
+  # Annotations to add to the service account
+  annotations: {}
+  # The name of the service account to use.
+  # If not set and create is true, a name is generated using the fullname template
+  name: ""
+
+# RBAC configuration
+rbac:
+  # Specifies whether RBAC resources should be created
+  create: true
+  # Additional cluster role rules
+  extraRules: []
+
+# Pod annotations
+podAnnotations: {}
+
+# Pod labels
+podLabels: {}
+
+# Pod security context
+podSecurityContext:
+  {}
+  # fsGroup: 2000
+
+# Security context for containers
+securityContext:
+  {}
+  # capabilities:
+  #   drop:
+  #   - ALL
+  # readOnlyRootFilesystem: true
+  # runAsNonRoot: true
+  # runAsUser: 1000
+
+# Service configuration
+service:
+  type: ClusterIP
+  # clusterIP: "" # Optional: Set a static ClusterIP
+  port: 8080
+  dnstapPort: 6000
+  targetPort: 8080
+  annotations: {}
+
+# Ingress configuration
+ingress:
+  enabled: false
+  className: ""
+  annotations: {}
+    # kubernetes.io/ingress.class: nginx
+    # kubernetes.io/tls-acme: "true"
+  hosts:
+    - host: k8s-resource-graph-client.local
+      paths:
+        - path: /
+          pathType: Prefix
+  tls: []
+  #  - secretName: chart-example-tls
+  #    hosts:
+  #      - chart-example.local
+
+# Resource limits and requests
+resources:
+  limits:
+    cpu: 200m
+    memory: 256Mi
+  requests:
+    cpu: 100m
+    memory: 128Mi
+
+# Horizontal Pod Autoscaler
+autoscaling:
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 100
+  targetCPUUtilizationPercentage: 80
+  # targetMemoryUtilizationPercentage: 80
+
+# Node selector
+nodeSelector: {}
+
+# Tolerations
+tolerations: []
+
+# Affinity
+affinity: {}
+
+# Topology spread constraints
+topologySpreadConstraints: []
+
+# Pod disruption budget
+podDisruptionBudget:
+  enabled: false
+  minAvailable: 1
+  # maxUnavailable: 1
+
+# Liveness probe configuration
+livenessProbe:
+  httpGet:
+    path: /healthz
+    port: http
+  initialDelaySeconds: 30
+  periodSeconds: 10
+  timeoutSeconds: 5
+  failureThreshold: 3
+
+# Readiness probe configuration
+readinessProbe:
+  httpGet:
+    path: /healthz
+    port: http
+  initialDelaySeconds: 5
+  periodSeconds: 10
+  timeoutSeconds: 5
+  failureThreshold: 3
+
+# Monitoring configuration
+monitoring:
+  # Enable ServiceMonitor for Prometheus Operator
+  serviceMonitor:
+    enabled: false
+    namespace: ""
+    labels:
+      release: prometheus
+    annotations: {}
+    interval: 30s
+    path: /metrics
+    targetLabels: []
+    metricRelabelings: []
+    relabelings: []
+
+# Client configuration
+config:
+  # Logging configuration
+  logLevel: "info"
+  
+  # Server configuration
+  serverPort: 8080
+   
+  # Sentry configuration
+  sentry:
+    dsn: "https://0d3d5e19f07e0173eaadeb930a405150@o4507775482789888.ingest.de.sentry.io/4510431321718864"
+    environment: "production"
+    release: ""
+    debug: false
+    sampleRate: 1.0
+    tracesSampleRate: 0.2
+   
+  
+  # Graph configuration
+  graph:
+    pruneInterval: "1h"
+    maxPruneAge: "24h"
+  
+  # Kubernetes configuration
+  kube:
+    configPath: ""
+    resyncInterval: "5m"
+    clusterName: "default-cluster"
+    resources:
+      - "pods"
+      - "nodes"
+      - "k8services"
+      - "configmaps"
+      - "secrets"
+      - "persistentvolumeclaims"
+      - "persistentvolumes"
+      - "deployments"
+      - "replicasets"
+      - "statefulsets"
+      - "daemonsets"
+      - "jobs"
+      - "ingresses" 
+      - "namespaces"
+      - "services"
+  # Causal analysis configuration
+  enableCausalAnalysis: false
+  causal:
+    algorithm: "counterfactual"
+    interval: "15m"
+  
+  # Services configuration
+  services:
+    workers: 4
+    # address: "127.0.0.1:6000"
+    # maxConns: 10
+    # readTimeout: "30s"
+    # writeTimeout: "30s"
+    # tls:
+    #   enabled: false
+    #   certFile: ""
+    #   keyFile: ""
+    #   caFile: ""
+    #   requireClientCert: false
+    #   minVersion: "1.2"
+    #   cipherSuites: []
+    # compression:
+    #   enabled: false
+    #   type: "none"
+    #   level: -1
+    # handshake:
+    #   timeout: "5s"
+    #   contentType: "protobuf:dnstap.Dnstap"
+
+  # Network observability — L7 dependency detection via Hubble, Istio, or Caretta.
+  # Auto-detects available source when source is empty (hubble > istio > caretta).
+  netobs:
+    enabled: false
+    interval: "60s"
+    prometheusUrl: ""       # empty = in-cluster discovery
+    source: ""              # empty = auto-detect; or "hubble" | "istio" | "caretta"
+    prometheusTimeout: "10s"
+
+  # Publishing configuration
+  enablePublishing: true
+  publisher:
+    # REQUIRED: API key for authentication (must be set to a valid value)
+    # apiKey: "your-api-key-here"
+    # Source the API key from an existing Secret (via the NOFIRE_API_KEY env var)
+    # instead of baking apiKey into the config.json ConfigMap in plaintext. When
+    # enabled the chart does NOT render templates/secret.yaml — the named Secret is
+    # expected to already exist (e.g. created by External Secrets Operator).
+    apiKeySecret:
+      enabled: false
+      name: nofire-credentials
+      key: api-key
+    timeout: "30s"
+    maxRetries: 3
+    retryDelay: "5s"
+    enableCompression: true
+    graph:
+      url: "https://my.nofire.ai/api/edge"
+      interval: "5m"
+    heartbeat:
+      url: ""
+      interval: "10s"
+
+# Environment variables
+env: []
+# - name: NODE_NAME
+#   valueFrom:
+#     fieldRef:
+#       fieldPath: spec.nodeName
+
+# Additional volumes
+extraVolumes: []
+
+# Additional volume mounts
+extraVolumeMounts: []
+
+# Extra containers
+extraContainers: []
+
+# Init containers
+initContainers: []
+
+# Node name configuration (for DaemonSet-like behavior)
+nodeName:
+  # Enable automatic node name injection
+  enabled: true
+  # Field path for node name
+  fieldPath: "spec.nodeName"
+
+# =============================================================================
+# Edge Proxy Configuration
+# =============================================================================
+# The edge proxy connects to Brain via gRPC and proxies observability queries
+# to on-prem data sources (Prometheus, Loki, Tempo, etc.).
+# Set enabled: true to deploy the edge proxy alongside the main agent.
+
+edgeProxy:
+  enabled: false
+
+  image:
+    repository: nofireai/edge-proxy
+    # tag: defaults to .Values.image.tag (shared version with main agent)
+    # pullPolicy: defaults to .Values.image.pullPolicy
+
+  replicaCount: 1
+
+  resources:
+    requests:
+      memory: "128Mi"
+      cpu: "100m"
+    limits:
+      memory: "256Mi"
+      cpu: "500m"
+
+  # Stream configuration (Brain gRPC connection)
+  stream:
+    serverAddress: "edge.nofire.ai:443"
+    useTLS: true
+    reconnectDelay: "1s"
+    maxReconnectDelay: "60s"
+    heartbeatInterval: "30s"
+    maxMessageSize: 16777216   # 16MB
+    maxConcurrent: 10
+    keepaliveTime: "30s"
+    keepaliveTimeout: "10s"
+    protocolVersion: 1
+
+  # HTTP client settings for backend connections
+  http:
+    timeout: "30s"
+    maxIdleConns: 100
+    retryMaxAttempts: 3
+
+  # PII redaction before data leaves customer infrastructure
+  redaction:
+    enabled: true
+    standardPII: true
+
+  # Health/metrics HTTP server port
+  serverPort: 8081
+
+  # Base path for K8s secret volume mounts inside the pod
+  secretsPath: "/etc/nofire/secrets"
+
+  # Service configuration
+  service:
+    type: ClusterIP
+    port: 8081
+    annotations: {}
+
+  # Probes
+  livenessProbe:
+    httpGet:
+      path: /healthz
+      port: 8081
+    initialDelaySeconds: 15
+    periodSeconds: 10
+  readinessProbe:
+    httpGet:
+      path: /healthz
+      port: 8081
+    initialDelaySeconds: 5
+    periodSeconds: 5
+
+# On-premises connections map (used when edgeProxy.enabled: true)
+#
+# Supported types: prometheus, loki, tempo, grafana, elasticsearch,
+#   open_search, mongodb_atlas, datadog, cloudwatch, google_cloud_logs,
+#   jaeger, alertmanager, github, gitlab, bitbucket, slack, custom_http, postgres
+#
+# Each connection supports:
+#   type:           (required) backend type from list above
+#   enabled:        (optional, default: true) whether connection is active
+#   name:           (optional, default: key name) human-friendly display name
+#   secretName:     (optional) K8s secret name for credentials (username/password/token)
+#   url:            (required for most types) backend service base URL
+#   orgId:          (optional) Loki multi-tenant org ID (X-Scope-OrgID header)
+#   index:          (optional) Elasticsearch/OpenSearch index pattern
+#   datasourceUID:  (optional) Tempo datasource UID
+#   tlsEnabled:     (optional) enable TLS for backend connection
+#   tlsSkipVerify:  (optional) skip backend TLS certificate verification
+#   caCertPath:     (optional) path to CA cert for backend TLS verification
+#
+# Postgres connections use DB fields instead of url:
+#   dbHost:         (required) database hostname
+#   dbPort:         (optional, default: 5432) database port
+#   dbName:         (required) database name
+#   dbSSLMode:      (optional) sslmode (e.g. disable, require, verify-full)
+#
+# Example:
+# onPremConnections:
+#   prod-prometheus:
+#     type: prometheus
+#     enabled: true
+#     name: "Production Prometheus"
+#     secretName: prometheus-creds
+#     url: "http://prometheus:9090"
+#   prod-loki:
+#     type: loki
+#     enabled: true
+#     name: "Production Loki"
+#     secretName: loki-creds
+#     url: "http://loki:3100"
+#     orgId: "tenant1"
+#   prod-postgres:
+#     type: postgres
+#     enabled: true
+#     name: "Production Postgres"
+#     secretName: postgres-creds
+#     dbHost: "postgres.default.svc.cluster.local"
+#     dbPort: 5432
+#     dbName: "app"
+#     dbSSLMode: "require"
+#   internal-api:
+#     type: custom_http
+#     enabled: true
+#     name: "Internal API"
+#     secretName: internal-api-creds
+#     url: "https://api.internal.example.com"
+onPremConnections: {}
