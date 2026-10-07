@@ -2,7 +2,7 @@
 # End-to-end check on a throwaway kind cluster: the installed ConfigMap carries
 # the namespace scoping keys, the Edge accepts the config and rolls out, a
 # values change rolls the pod, and an invalid filter is rejected at render.
-# Needs docker, kind, kubectl, helm, jq. Usage: tests/e2e/kind.sh
+# Needs docker, kind, kubectl, helm, jq, yq. Usage: tests/e2e/kind.sh
 set -euo pipefail
 
 root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
@@ -43,9 +43,15 @@ cm_config() {
   cm="$(kubectl get cm -l "app.kubernetes.io/instance=$release" -o name | grep -- '-config$')"
   kubectl get "$cm" -o jsonpath='{.data.config\.json}'
 }
+selector="app.kubernetes.io/instance=$release,app.kubernetes.io/name=nofire-edge"
 checksum() {
-  kubectl get deploy -l "app.kubernetes.io/instance=$release" \
+  kubectl get deploy -l "$selector" \
     -o jsonpath='{.items[0].spec.template.metadata.annotations.checksum/config}'
+}
+# Name of the live pod whose checksum/config annotation equals $1.
+pod_with_checksum() {
+  kubectl get pods -l "$selector" -o json | jq -r --arg c "$1" \
+    '.items[] | select(.metadata.deletionTimestamp == null and .metadata.annotations["checksum/config"] == $c) | .metadata.name' | head -1
 }
 assert() { # description, config.json, jq expression
   jq -e "$3" <<<"$2" >/dev/null || die "$1: jq '$3' failed on: $2"
@@ -62,11 +68,13 @@ assert "installed ConfigMap has netobs keys" "$cfg" \
 before="$(checksum)"
 
 step "rollout (the Edge accepted the config)"
-kubectl rollout status deploy -l "app.kubernetes.io/instance=$release" --timeout=180s \
-  || { kubectl logs -l "app.kubernetes.io/instance=$release" --tail=50 || true; die "rollout failed"; }
+kubectl rollout status deploy -l "$selector" --timeout=180s \
+  || { kubectl logs -l "$selector" --tail=50 || true; die "rollout failed"; }
 # The Edge logs its loaded config at startup (cmd/edge/main.go); there is no
 # dedicated namespace-filter log line.
-logs="$(kubectl logs -l "app.kubernetes.io/instance=$release" --tail=-1)"
+pod="$(pod_with_checksum "$before")"
+[[ -n "$pod" ]] || die "no pod carries checksum $before"
+logs="$(kubectl logs "$pod")"
 grep -q 'Configuration loaded successfully' <<<"$logs" || die "no 'Configuration loaded' line in logs"
 grep -Eq '"mode": ?"allow"' <<<"$logs" || die "startup log does not show namespaceFilter mode allow"
 echo "ok: startup log shows the allow filter"
@@ -78,10 +86,13 @@ after="$(checksum)"
 [[ -n "$before" && "$before" != "$after" ]] || die "checksum/config did not change ($before -> $after)"
 echo "ok: checksum/config changed"
 assert "upgraded ConfigMap has deny filter" "$(cm_config)" '.kube.namespaceFilter.mode == "deny"'
-kubectl rollout status deploy -l "app.kubernetes.io/instance=$release" --timeout=180s \
+kubectl rollout status deploy -l "$selector" --timeout=180s \
   || die "rollout after upgrade failed"
-logs="$(kubectl logs -l "app.kubernetes.io/instance=$release" --tail=-1)"
-grep -Eq '"mode": ?"deny"' <<<"$logs" || die "pod log does not show mode deny after upgrade"
+pod="$(pod_with_checksum "$after")"
+[[ -n "$pod" ]] || die "no pod carries the new checksum $after"
+logs="$(kubectl logs "$pod")"
+grep -Eq '"mode": ?"deny"' <<<"$logs" || die "new pod $pod log does not show mode deny"
+! grep -Eq '"mode": ?"allow"' <<<"$logs" || die "new pod $pod log still shows mode allow"
 echo "ok: new pod runs with the deny filter"
 
 step "negative: allow with no namespaces is rejected at render"
