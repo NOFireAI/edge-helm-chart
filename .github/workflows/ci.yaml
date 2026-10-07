@@ -2,6 +2,8 @@ name: CI
 
 on:
   pull_request:
+  push:
+    branches: [main]
 
 jobs:
   test:
@@ -20,3 +22,4 @@ jobs:
       - run: helm lint .
       - run: helm unittest .
       - run: tests/render/run.sh
+      - run: tests/render/harness_test.sh

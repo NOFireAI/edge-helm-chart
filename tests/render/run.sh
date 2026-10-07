@@ -42,26 +42,33 @@ for dir in "$here"/cases/*/; do
   vals=(-f "$dir/values.yaml")
   if [[ -f "$dir/replace-values" ]]; then
     chart="$tmp/chart-$name"
-    cp -R "$chart_root" "$chart"
+    mkdir "$chart"
+    (cd "$chart_root" && tar --exclude=.git --exclude=node_modules --exclude=tests -cf - .) | (cd "$chart" && tar -xf -)
     cp "$dir/values.yaml" "$chart/values.yaml"
     vals=()
   fi
 
+  # stdout is the manifest; stderr (helm warnings, errors) is kept apart so
+  # warnings on a successful render never end up in the YAML handed to yq.
+  rc=0
+  helm template t "$chart" ${vals[@]+"${vals[@]}"} -s templates/configmap.yaml >"$tmp/out" 2>"$tmp/stderr" || rc=$?
+
   if [[ -f "$dir/expect-fail" ]]; then
-    if out="$(helm template t "$chart" ${vals[@]+"${vals[@]}"} -s templates/configmap.yaml 2>&1)"; then
+    if [[ "$rc" -eq 0 ]]; then
       report FAIL "$name" "render succeeded, expected failure"
-    elif grep -Eq "$(cat "$dir/expect-fail")" <<<"$out"; then
+    elif grep -Eq "$(cat "$dir/expect-fail")" "$tmp/stderr"; then
       report PASS "$name"
     else
-      report FAIL "$name" "error did not match $(cat "$dir/expect-fail"): $out"
+      report FAIL "$name" "error did not match $(cat "$dir/expect-fail"): $(cat "$tmp/stderr")"
     fi
     continue
   fi
 
-  if ! out="$(helm template t "$chart" ${vals[@]+"${vals[@]}"} -s templates/configmap.yaml 2>&1)"; then
-    report FAIL "$name" "render failed: $out"
+  if [[ "$rc" -ne 0 ]]; then
+    report FAIL "$name" "render failed: $(cat "$tmp/stderr")"
     continue
   fi
+  out="$(cat "$tmp/out")"
   cfg="$tmp/$name.json"
   yq -r '.data["config.json"]' <<<"$out" > "$cfg"
   if ! jq -e . "$cfg" >/dev/null 2>"$tmp/err"; then
