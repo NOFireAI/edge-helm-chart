@@ -136,3 +136,18 @@ Edge Proxy: configmap name
 {{- define "nofire-edge.edgeProxy.configName" -}}
 {{- printf "%s-config" (include "nofire-edge.edgeProxy.fullname" .) }}
 {{- end }}
+
+{{- /*
+nofire-edge.pickSet: JSON object of the given keys that are set on src. A key is
+kept when present, even if falsy (false, 0, "", []); an explicit null counts as unset.
+*/ -}}
+{{- define "nofire-edge.pickSet" -}}
+{{- $out := dict -}}
+{{- $src := .src | default dict -}}
+{{- range $k := .keys -}}
+{{- if and (hasKey $src $k) (not (kindIs "invalid" (index $src $k))) -}}
+{{- $_ := set $out $k (index $src $k) -}}
+{{- end -}}
+{{- end -}}
+{{- $out | toJson -}}
+{{- end -}}
