@@ -207,6 +207,17 @@ config:
       - "ingresses" 
       - "namespaces"
       - "services"
+    # Restrict which namespaces enter the resource graph. Unset (or mode "none")
+    # means every namespace is graphed. The chart fails the render on invalid
+    # combinations, mirroring the Edge's own validation:
+    #   - namespaces set with mode unset/""/"none"
+    #   - mode "allow" or "deny" with an empty namespaces list
+    #   - any other mode
+    # namespaceFilter:
+    #   mode: allow            # allow | deny | none
+    #   namespaces:
+    #     - production
+    #     - staging
   # Causal analysis configuration
   enableCausalAnalysis: false
   causal:
@@ -216,24 +227,31 @@ config:
   # Services configuration
   services:
     workers: 4
-    # address: "127.0.0.1:6000"
-    # maxConns: 10
+    # Keys you leave out use the Edge defaults shown below (set a key to override
+    # it; partial tls/compression/handshake objects are merged into the defaults).
+    # DNSTap listens on :6000 even when address is unset (matches service.dnstapPort).
+    # address: ":6000"
+    # maxConns: 100
     # readTimeout: "30s"
-    # writeTimeout: "30s"
+    # writeTimeout: "10s"
     # tls:
     #   enabled: false
-    #   certFile: ""
-    #   keyFile: ""
-    #   caFile: ""
+    #   certFile: "/etc/nofire/certs/tls.crt"
+    #   keyFile: "/etc/nofire/certs/tls.key"
+    #   caFile: "/etc/nofire/certs/ca.crt"
     #   requireClientCert: false
     #   minVersion: "1.2"
-    #   cipherSuites: []
+    #   cipherSuites:      # setting this replaces the default list
+    #     - TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256
+    #     - TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384
+    #     - TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256
+    #     - TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384
     # compression:
-    #   enabled: false
-    #   type: "none"
+    #   enabled: true
+    #   type: "gzip"       # none | gzip
     #   level: -1
     # handshake:
-    #   timeout: "5s"
+    #   timeout: "10s"
     #   contentType: "protobuf:dnstap.Dnstap"
 
   # Network observability — L7 dependency detection via Hubble, Istio, or Caretta.
@@ -244,6 +262,15 @@ config:
     prometheusUrl: ""       # empty = in-cluster discovery
     source: ""              # empty = auto-detect; or "hubble" | "istio" | "caretta"
     prometheusTimeout: "10s"
+    # How long a network edge is kept after it stops being observed (Edge default: 2h).
+    # edgeExistenceTtl: "2h"
+    # Namespaces whose network flows are dropped before collection. Edge default:
+    # [kube-system, monitoring]. Setting this REPLACES the default, it does not
+    # append (use [] to exclude nothing). Namespaces listed in a deny-mode
+    # kube.namespaceFilter are added by the Edge on top of this list.
+    # excludeNamespaces:
+    #   - kube-system
+    #   - monitoring
 
   # Publishing configuration
   enablePublishing: true

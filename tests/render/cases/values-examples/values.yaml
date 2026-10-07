@@ -1,0 +1,37 @@
+# The documented examples from values.yaml, uncommented.
+config:
+  kube:
+    namespaceFilter:
+      mode: allow
+      namespaces:
+        - production
+        - staging
+  netobs:
+    edgeExistenceTtl: "2h"
+    excludeNamespaces:
+      - kube-system
+      - monitoring
+  services:
+    address: ":6000"
+    maxConns: 100
+    readTimeout: "30s"
+    writeTimeout: "10s"
+    tls:
+      enabled: false
+      certFile: "/etc/nofire/certs/tls.crt"
+      keyFile: "/etc/nofire/certs/tls.key"
+      caFile: "/etc/nofire/certs/ca.crt"
+      requireClientCert: false
+      minVersion: "1.2"
+      cipherSuites:
+        - TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256
+        - TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384
+        - TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256
+        - TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384
+    compression:
+      enabled: true
+      type: "gzip"
+      level: -1
+    handshake:
+      timeout: "10s"
+      contentType: "protobuf:dnstap.Dnstap"
