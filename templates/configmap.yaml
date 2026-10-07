@@ -116,6 +116,9 @@ data:
         {{- if and (hasKey .Values.config.netobs "edgeExistenceTtl") (not (kindIs "invalid" .Values.config.netobs.edgeExistenceTtl)) }},
         "edgeExistenceTtl": {{ .Values.config.netobs.edgeExistenceTtl | quote }}
         {{- end }}
+        {{- if and (hasKey .Values.config.netobs "excludeNamespaces") (not (kindIs "invalid" .Values.config.netobs.excludeNamespaces)) }},
+        "excludeNamespaces": {{ .Values.config.netobs.excludeNamespaces | toJson }}
+        {{- end }}
       },
       "configMapCapture": {
         "clearText": {{ .Values.config.configMapCapture.clearText | default false }},
