@@ -1,0 +1,1 @@
+config: {netobs: {edgeExistenceTtl: "not-a-duration"}}

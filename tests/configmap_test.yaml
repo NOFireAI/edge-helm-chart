@@ -40,3 +40,25 @@ tests:
     asserts:
       - failedTemplate:
           errorPattern: excludeNamespaces entry 1 must be a string
+
+  - it: keeps excludeNamespaces entries the Edge accepts, such as uppercase
+    set:
+      config.netobs.excludeNamespaces: ["Prod_1"]
+    asserts:
+      - matchRegex:
+          path: data["config.json"]
+          pattern: '"excludeNamespaces": \["Prod_1"\]'
+
+  - it: fails on an edgeExistenceTtl that is not a duration
+    set:
+      config.netobs.edgeExistenceTtl: not-a-duration
+    asserts:
+      - failedTemplate:
+          errorPattern: edgeExistenceTtl "not-a-duration" is not a valid duration
+
+  - it: fails on an edgeExistenceTtl without a unit
+    set:
+      config.netobs.edgeExistenceTtl: "30"
+    asserts:
+      - failedTemplate:
+          errorPattern: edgeExistenceTtl "30" is not a valid duration

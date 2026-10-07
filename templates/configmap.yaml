@@ -92,6 +92,10 @@ data:
         {{- if and (hasKey .Values.config.netobs "edgeExistenceTtl") (not (kindIs "invalid" .Values.config.netobs.edgeExistenceTtl)) }}
         {{- if not (kindIs "string" .Values.config.netobs.edgeExistenceTtl) }}
         {{- fail (printf "config.netobs.edgeExistenceTtl must be a duration string like 2h (got %v)" .Values.config.netobs.edgeExistenceTtl) }}
+        {{- end }}
+        {{- /* Go duration syntax: optional sign, then number+unit pairs ("1h30m", "1.5h"), or plain "0". */}}
+        {{- if not (regexMatch "^([-+]?(([0-9]+[.]?[0-9]*|[.][0-9]+)(ns|us|µs|μs|ms|s|m|h))+|[-+]?0)$" .Values.config.netobs.edgeExistenceTtl) }}
+        {{- fail (printf "config.netobs.edgeExistenceTtl %q is not a valid duration; use Go syntax such as 2h, 90m or 1h30m" .Values.config.netobs.edgeExistenceTtl) }}
         {{- end }},
         "edgeExistenceTtl": {{ .Values.config.netobs.edgeExistenceTtl | quote }}
         {{- end }}
