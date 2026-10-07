@@ -1,1 +1,1 @@
-config\.kube\.namespaceFilter\.mode
+mode "none" disables filtering

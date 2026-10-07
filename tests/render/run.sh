@@ -12,6 +12,7 @@ set -euo pipefail
 here="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 chart="$(cd "$here/../.." && pwd)"
 filter="${1:-}"
+[[ -n "${EDGE_SRC:-}" ]] && EDGE_SRC="$(cd "$EDGE_SRC" && pwd)"
 tmp="$(mktemp -d)"
 trap 'rm -rf "$tmp"' EXIT
 

@@ -24,14 +24,16 @@ data:
           {{ $resource | quote }}
           {{- end }}
         ]
-        {{- $nf := pick (.Values.config.kube.namespaceFilter | default dict) "mode" "namespaces" }}
+        {{- $nfRaw := .Values.config.kube.namespaceFilter }}
+        {{- if and (hasKey .Values.config.kube "namespaceFilter") (not (kindIs "invalid" $nfRaw)) (not (kindIs "map" $nfRaw)) }}
+        {{- fail "config.kube.namespaceFilter must be a map" }}
+        {{- end }}
+        {{- $nf := dict }}
+        {{- $_ := include "nofire-edge.typedPick" (dict "src" $nfRaw "path" "config.kube.namespaceFilter" "out" $nf "spec" (dict "mode" "string" "namespaces" "strlist")) }}
         {{- if $nf }}
         {{- /* Mirror the Edge's validation so a bad filter fails at install, not as a crashloop. */}}
-        {{- $mode := printf "%v" (get $nf "mode" | default "") }}
+        {{- $mode := get $nf "mode" | default "" }}
         {{- $namespaces := get $nf "namespaces" | default list }}
-        {{- if not (kindIs "slice" $namespaces) }}
-        {{- fail "config.kube.namespaceFilter.namespaces must be a list" }}
-        {{- end }}
         {{- if has $mode (list "" "none") }}
         {{- if $namespaces }}
         {{- fail (printf "config.kube.namespaceFilter.namespaces is set but mode %q disables filtering; set config.kube.namespaceFilter.mode to 'allow' or 'deny'" $mode) }}
@@ -39,6 +41,11 @@ data:
         {{- else if has $mode (list "allow" "deny") }}
         {{- if not $namespaces }}
         {{- fail (printf "config.kube.namespaceFilter.mode is %q but config.kube.namespaceFilter.namespaces is empty" $mode) }}
+        {{- end }}
+        {{- range $ns := $namespaces }}
+        {{- if not (and (le (len $ns) 63) (regexMatch "^[a-z0-9]([-a-z0-9]*[a-z0-9])?$" $ns)) }}
+        {{- fail (printf "config.kube.namespaceFilter.namespaces entry %q is not a valid namespace name (a lowercase DNS-1123 label of at most 63 characters)" $ns) }}
+        {{- end }}
         {{- end }}
         {{- else }}
         {{- fail (printf "config.kube.namespaceFilter.mode must be one of '', 'none', 'allow', 'deny' (got %q)" $mode) }}
@@ -82,10 +89,16 @@ data:
         "prometheusUrl": {{ .Values.config.netobs.prometheusUrl | default "" | quote }},
         "source": {{ .Values.config.netobs.source | default "" | quote }},
         "prometheusTimeout": {{ .Values.config.netobs.prometheusTimeout | default "10s" | quote }}
-        {{- if and (hasKey .Values.config.netobs "edgeExistenceTtl") (not (kindIs "invalid" .Values.config.netobs.edgeExistenceTtl)) }},
+        {{- if and (hasKey .Values.config.netobs "edgeExistenceTtl") (not (kindIs "invalid" .Values.config.netobs.edgeExistenceTtl)) }}
+        {{- if not (kindIs "string" .Values.config.netobs.edgeExistenceTtl) }}
+        {{- fail (printf "config.netobs.edgeExistenceTtl must be a duration string like 2h (got %v)" .Values.config.netobs.edgeExistenceTtl) }}
+        {{- end }},
         "edgeExistenceTtl": {{ .Values.config.netobs.edgeExistenceTtl | quote }}
         {{- end }}
-        {{- if and (hasKey .Values.config.netobs "excludeNamespaces") (not (kindIs "invalid" .Values.config.netobs.excludeNamespaces)) }},
+        {{- if and (hasKey .Values.config.netobs "excludeNamespaces") (not (kindIs "invalid" .Values.config.netobs.excludeNamespaces)) }}
+        {{- if not (kindIs "slice" .Values.config.netobs.excludeNamespaces) }}
+        {{- fail "config.netobs.excludeNamespaces must be a list" }}
+        {{- end }},
         "excludeNamespaces": {{ .Values.config.netobs.excludeNamespaces | toJson }}
         {{- end }}
       },

@@ -1,1 +1,1 @@
-config\.kube\.namespaceFilter\.namespaces
+mode is "deny" but

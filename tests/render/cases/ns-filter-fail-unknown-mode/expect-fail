@@ -1,1 +1,1 @@
-config\.kube\.namespaceFilter\.mode.*bogus
+must be one of.*bogus

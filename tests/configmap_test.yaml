@@ -17,14 +17,14 @@ tests:
       config.kube.namespaceFilter.namespaces: [a]
     asserts:
       - failedTemplate:
-          errorPattern: config\.kube\.namespaceFilter\.mode
+          errorPattern: disables filtering
 
   - it: fails when mode is allow with no namespaces
     set:
       config.kube.namespaceFilter.mode: allow
     asserts:
       - failedTemplate:
-          errorPattern: config\.kube\.namespaceFilter\.namespaces
+          errorPattern: mode is "allow" but
 
   - it: fails on an unknown mode
     set:
@@ -32,4 +32,4 @@ tests:
       config.kube.namespaceFilter.namespaces: [a]
     asserts:
       - failedTemplate:
-          errorPattern: config\.kube\.namespaceFilter\.mode
+          errorPattern: must be one of
