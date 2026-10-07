@@ -59,24 +59,7 @@ data:
         "sampleRate": {{ .Values.config.sentry.sampleRate | default 1.0 }},
         "tracesSampleRate": {{ .Values.config.sentry.tracesSampleRate | default 0.0 }}
       },
-      "services": {
-        {{- $s := .Values.config.services | default dict }}
-        {{- $scalars := include "nofire-edge.pickSet" (dict "src" $s "keys" (list "workers" "address" "maxConns" "readTimeout" "writeTimeout")) | fromJson }}
-        {{- $first := true }}
-        {{- range $k, $v := $scalars }}
-        {{- if not $first }},{{ end }}
-        {{ $k | quote }}: {{ $v | toJson }}
-        {{- $first = false }}
-        {{- end }}
-        {{- range $name, $keys := dict "tls" (list "enabled" "certFile" "keyFile" "caFile" "requireClientCert" "minVersion" "cipherSuites") "compression" (list "enabled" "type" "level") "handshake" (list "timeout" "contentType") }}
-        {{- $obj := include "nofire-edge.pickSet" (dict "src" (get $s $name) "keys" $keys) | fromJson }}
-        {{- if $obj }}
-        {{- if not $first }},{{ end }}
-        {{ $name | quote }}: {{ $obj | toJson }}
-        {{- $first = false }}
-        {{- end }}
-        {{- end }}
-      },
+      "services": {{ include "nofire-edge.servicesJson" . }},
       "enablePublishing": {{ .Values.config.enablePublishing }},
       "publisher": {
         "apiKey": {{ if .Values.config.publisher.apiKeySecret.enabled }}"{NOFIRE_API_KEY}"{{ else }}{{ .Values.config.publisher.apiKey | default "" | quote }}{{ end }},
