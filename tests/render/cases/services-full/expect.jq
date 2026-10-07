@@ -1,0 +1,8 @@
+.services == {
+  "workers": 8, "address": "127.0.0.1:6000", "maxConns": 10,
+  "readTimeout": "30s", "writeTimeout": "20s",
+  "tls": {"enabled": false, "certFile": "", "keyFile": "", "caFile": "",
+          "requireClientCert": false, "minVersion": "1.2", "cipherSuites": []},
+  "compression": {"enabled": false, "type": "none", "level": -1},
+  "handshake": {"timeout": "5s", "contentType": "protobuf:dnstap.Dnstap"}
+}

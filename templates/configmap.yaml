@@ -1,3 +1,17 @@
+{{- /*
+nofire-edge.pickSet: JSON object of the given keys that are set on src. A key is
+kept when present, even if falsy (false, 0, "", []); an explicit null counts as unset.
+*/ -}}
+{{- define "nofire-edge.pickSet" -}}
+{{- $out := dict -}}
+{{- $src := .src | default dict -}}
+{{- range $k := .keys -}}
+{{- if and (hasKey $src $k) (not (kindIs "invalid" (index $src $k))) -}}
+{{- $_ := set $out $k (index $src $k) -}}
+{{- end -}}
+{{- end -}}
+{{- $out | toJson -}}
+{{- end -}}
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -60,35 +74,43 @@ data:
         "tracesSampleRate": {{ .Values.config.sentry.tracesSampleRate | default 0.0 }}
       },
       "services": {
-        "workers": {{ .Values.config.services.workers }}
-        {{- if .Values.config.services.address }},
-        "address": {{ .Values.config.services.address | quote }},
-        "maxConns": {{ .Values.config.services.maxConns }},
-        "readTimeout": {{ .Values.config.services.readTimeout | quote }},
-        "writeTimeout": {{ .Values.config.services.writeTimeout | quote }},
+        {{- $s := .Values.config.services | default dict }}
+        {{- $scalars := include "nofire-edge.pickSet" (dict "src" $s "keys" (list "workers" "address" "maxConns" "readTimeout" "writeTimeout")) | fromJson }}
+        {{- $first := true }}
+        {{- range $k, $v := $scalars }}
+        {{- if not $first }},{{ end }}
+        {{ $k | quote }}: {{ $v | toJson }}
+        {{- $first = false }}
+        {{- end }}
+        {{- if kindIs "map" $s.tls }}
+        {{- if not $first }},{{ end }}
         "tls": {
-          "enabled": {{ .Values.config.services.tls.enabled | default false }},
-          "certFile": {{ .Values.config.services.tls.certFile | default "" | quote }},
-          "keyFile": {{ .Values.config.services.tls.keyFile | default "" | quote }},
-          "caFile": {{ .Values.config.services.tls.caFile | default "" | quote }},
-          "requireClientCert": {{ .Values.config.services.tls.requireClientCert | default false }},
-          "minVersion": {{ .Values.config.services.tls.minVersion | default "" | quote }},
-          "cipherSuites": [
-            {{- range $index, $suite := .Values.config.services.tls.cipherSuites }}
-            {{- if $index }},{{ end }}
-            {{ $suite | quote }}
-            {{- end }}
-          ]
-        },
-        "compression": {
-          "enabled": {{ .Values.config.services.compression.enabled | default false }},
-          "type": {{ .Values.config.services.compression.type | default "" | quote }},
-          "level": {{ .Values.config.services.compression.level | default -1 }}
-        },
-        "handshake": {
-          "timeout": {{ .Values.config.services.handshake.timeout | default "" | quote }},
-          "contentType": {{ .Values.config.services.handshake.contentType | default "" | quote }}
+          "enabled": {{ $s.tls.enabled | default false }},
+          "certFile": {{ $s.tls.certFile | default "" | quote }},
+          "keyFile": {{ $s.tls.keyFile | default "" | quote }},
+          "caFile": {{ $s.tls.caFile | default "" | quote }},
+          "requireClientCert": {{ $s.tls.requireClientCert | default false }},
+          "minVersion": {{ $s.tls.minVersion | default "" | quote }},
+          "cipherSuites": {{ $s.tls.cipherSuites | default list | toJson }}
         }
+        {{- $first = false }}
+        {{- end }}
+        {{- if kindIs "map" $s.compression }}
+        {{- if not $first }},{{ end }}
+        "compression": {
+          "enabled": {{ $s.compression.enabled | default false }},
+          "type": {{ $s.compression.type | default "" | quote }},
+          "level": {{ $s.compression.level | default -1 }}
+        }
+        {{- $first = false }}
+        {{- end }}
+        {{- if kindIs "map" $s.handshake }}
+        {{- if not $first }},{{ end }}
+        "handshake": {
+          "timeout": {{ $s.handshake.timeout | default "" | quote }},
+          "contentType": {{ $s.handshake.contentType | default "" | quote }}
+        }
+        {{- $first = false }}
         {{- end }}
       },
       "enablePublishing": {{ .Values.config.enablePublishing }},
