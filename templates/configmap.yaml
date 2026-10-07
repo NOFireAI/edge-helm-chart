@@ -113,6 +113,9 @@ data:
         "prometheusUrl": {{ .Values.config.netobs.prometheusUrl | default "" | quote }},
         "source": {{ .Values.config.netobs.source | default "" | quote }},
         "prometheusTimeout": {{ .Values.config.netobs.prometheusTimeout | default "10s" | quote }}
+        {{- if and (hasKey .Values.config.netobs "edgeExistenceTtl") (not (kindIs "invalid" .Values.config.netobs.edgeExistenceTtl)) }},
+        "edgeExistenceTtl": {{ .Values.config.netobs.edgeExistenceTtl | quote }}
+        {{- end }}
       },
       "configMapCapture": {
         "clearText": {{ .Values.config.configMapCapture.clearText | default false }},
