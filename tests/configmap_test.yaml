@@ -77,3 +77,11 @@ tests:
     asserts:
       - failedTemplate:
           errorPattern: namespaceFilter has unknown key "node"
+
+  - it: accepts a whole number given as a float from a values file
+    values:
+      - values/large-ints.yaml
+    asserts:
+      - matchRegex:
+          path: data["config.json"]
+          pattern: '"maxConns":1048576'

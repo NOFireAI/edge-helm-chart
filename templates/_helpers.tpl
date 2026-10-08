@@ -154,8 +154,12 @@ Writes nothing itself: call it as `{{- $_ := include "nofire-edge.typedPick" (di
 {{- $v := index $src $k -}}
 {{- $p := printf "%s.%s" $path $k -}}
 {{- if eq $t "int" -}}
+{{- /* A number from a values file is a float64; toString would print 1048576 as 1.048576e+06. */ -}}
+{{- if and (kindIs "float64" $v) (eq $v (floor $v)) -}}{{- $_ := set $.out $k (int64 $v) -}}
+{{- else -}}
 {{- if not (regexMatch "^-?[0-9]+$" (toString $v)) -}}{{- fail (printf "%s must be an integer (got %v)" $p $v) -}}{{- end -}}
 {{- $_ := set $.out $k (int64 $v) -}}
+{{- end -}}
 {{- else if eq $t "bool" -}}
 {{- if kindIs "bool" $v -}}{{- $_ := set $.out $k $v -}}
 {{- else if has (toString $v) (list "true" "false") -}}{{- $_ := set $.out $k (eq (toString $v) "true") -}}
