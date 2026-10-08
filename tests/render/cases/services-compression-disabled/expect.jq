@@ -1,0 +1,1 @@
+.services.compression == {"enabled": false}

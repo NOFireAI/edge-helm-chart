@@ -1,0 +1,1 @@
+.netobs.excludeNamespaces == ["x"]

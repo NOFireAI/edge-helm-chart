@@ -66,6 +66,10 @@ config:
       - "jobs"
       - "ingresses"
       - "namespaces"
+    # Scope the graph to specific namespaces (default: all). See values.yaml.
+    # namespaceFilter:
+    #   mode: deny
+    #   namespaces: ["kube-system"]
   
   # Enable publishing with real endpoints
   enablePublishing: false

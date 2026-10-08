@@ -1,0 +1,4 @@
+config:
+  kube:
+    namespaceFilter:
+      mode: none

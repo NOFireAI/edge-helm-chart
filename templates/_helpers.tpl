@@ -136,3 +136,60 @@ Edge Proxy: configmap name
 {{- define "nofire-edge.edgeProxy.configName" -}}
 {{- printf "%s-config" (include "nofire-edge.edgeProxy.fullname" .) }}
 {{- end }}
+
+{{- /*
+nofire-edge.typedPick copies the keys named in .spec from .src into the dict
+.out, coercing each to the type the Edge expects. Values given as strings (for
+example via --set-string) would otherwise crash the Edge's JSON decoder.
+A key is kept when present, even if falsy (false, 0, "", []); an explicit null
+counts as unset. .spec maps key -> int | bool | string | nestring | strlist
+(nestring: an empty string counts as unset). .path prefixes error messages.
+Writes nothing itself: call it as `{{- $_ := include "nofire-edge.typedPick" (dict ...) }}`.
+*/ -}}
+{{- define "nofire-edge.typedPick" -}}
+{{- $src := .src | default dict -}}
+{{- $path := .path -}}
+{{- range $k, $t := .spec -}}
+{{- if and (hasKey $src $k) (not (kindIs "invalid" (index $src $k))) -}}
+{{- $v := index $src $k -}}
+{{- $p := printf "%s.%s" $path $k -}}
+{{- if eq $t "int" -}}
+{{- if not (regexMatch "^-?[0-9]+$" (toString $v)) -}}{{- fail (printf "%s must be an integer (got %v)" $p $v) -}}{{- end -}}
+{{- $_ := set $.out $k (int64 $v) -}}
+{{- else if eq $t "bool" -}}
+{{- if kindIs "bool" $v -}}{{- $_ := set $.out $k $v -}}
+{{- else if has (toString $v) (list "true" "false") -}}{{- $_ := set $.out $k (eq (toString $v) "true") -}}
+{{- else -}}{{- fail (printf "%s must be a boolean (got %v)" $p $v) -}}{{- end -}}
+{{- else if or (eq $t "string") (eq $t "nestring") -}}
+{{- if or (kindIs "map" $v) (kindIs "slice" $v) -}}{{- fail (printf "%s must be a string" $p) -}}{{- end -}}
+{{- if or (eq $t "string") (ne (toString $v) "") -}}{{- $_ := set $.out $k (toString $v) -}}{{- end -}}
+{{- else if eq $t "strlist" -}}
+{{- if not (kindIs "slice" $v) -}}{{- fail (printf "%s must be a list" $p) -}}{{- end -}}
+{{- range $e := $v -}}{{- if not (kindIs "string" $e) -}}{{- fail (printf "%s entry %v must be a string" $p $e) -}}{{- end -}}{{- end -}}
+{{- $_ := set $.out $k $v -}}
+{{- end -}}
+{{- end -}}
+{{- end -}}
+{{- end -}}
+
+{{- /* nofire-edge.servicesJson: the Edge "services" object, with only the keys the user set. */ -}}
+{{- define "nofire-edge.servicesJson" -}}
+{{- $s := .Values.config.services | default dict -}}
+{{- if not (kindIs "map" $s) -}}{{- fail "config.services must be a map" -}}{{- end -}}
+{{- $out := dict -}}
+{{- $_ := include "nofire-edge.typedPick" (dict "src" $s "path" "config.services" "out" $out "spec" (dict "workers" "int" "address" "nestring" "maxConns" "int" "readTimeout" "string" "writeTimeout" "string")) -}}
+{{- $objects := dict
+    "tls" (dict "enabled" "bool" "certFile" "string" "keyFile" "string" "caFile" "string" "requireClientCert" "bool" "minVersion" "string" "cipherSuites" "strlist")
+    "compression" (dict "enabled" "bool" "type" "string" "level" "int")
+    "handshake" (dict "timeout" "string" "contentType" "string") -}}
+{{- range $name, $spec := $objects -}}
+{{- $v := get $s $name -}}
+{{- if and (hasKey $s $name) (not (kindIs "invalid" $v)) (not (kindIs "map" $v)) -}}{{- fail (printf "config.services.%s must be a map" $name) -}}{{- end -}}
+{{- if kindIs "map" $v -}}
+{{- $o := dict -}}
+{{- $_ := include "nofire-edge.typedPick" (dict "src" $v "path" (printf "config.services.%s" $name) "out" $o "spec" $spec) -}}
+{{- if $o -}}{{- $_ := set $out $name $o -}}{{- end -}}
+{{- end -}}
+{{- end -}}
+{{- $out | toJson -}}
+{{- end -}}

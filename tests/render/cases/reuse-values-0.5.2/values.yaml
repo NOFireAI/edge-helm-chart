@@ -6,10 +6,8 @@
 image:
   repository: nofireai/edge
   pullPolicy: Always
-  # Overrides the image tag, which otherwise defaults to the chart appVersion.
-  # Released tags carry the "v" prefix (nofireai/edge:v3.6.0) — a bare "3.6.0"
-  # does not exist in the registry.
-  tag: "v3.6.0"
+  # Overrides the image tag whose default is the chart appVersion.
+  tag: "latest"
 
 # Image pull secrets
 imagePullSecrets: []
@@ -194,7 +192,6 @@ config:
       - "pods"
       - "nodes"
       - "k8services"
-      - "endpoints"
       - "configmaps"
       - "secrets"
       - "persistentvolumeclaims"
@@ -207,17 +204,6 @@ config:
       - "ingresses" 
       - "namespaces"
       - "services"
-    # Restrict which namespaces enter the resource graph. Unset (or mode "none")
-    # means every namespace is graphed. The chart fails the render on invalid
-    # combinations, mirroring the Edge's own validation:
-    #   - namespaces set with mode unset/""/"none"
-    #   - mode "allow" or "deny" with an empty namespaces list
-    #   - any other mode
-    # namespaceFilter:
-    #   mode: allow            # allow | deny | none
-    #   namespaces:
-    #     - production
-    #     - staging
   # Causal analysis configuration
   enableCausalAnalysis: false
   causal:
@@ -227,31 +213,24 @@ config:
   # Services configuration
   services:
     workers: 4
-    # Keys you leave out use the Edge defaults shown below (set a key to override
-    # it; partial tls/compression/handshake objects are merged into the defaults).
-    # DNSTap listens on :6000 even when address is unset (matches service.dnstapPort).
-    # address: ":6000"
-    # maxConns: 100
+    # address: "127.0.0.1:6000"
+    # maxConns: 10
     # readTimeout: "30s"
-    # writeTimeout: "10s"
+    # writeTimeout: "30s"
     # tls:
     #   enabled: false
-    #   certFile: "/etc/nofire/certs/tls.crt"
-    #   keyFile: "/etc/nofire/certs/tls.key"
-    #   caFile: "/etc/nofire/certs/ca.crt"
+    #   certFile: ""
+    #   keyFile: ""
+    #   caFile: ""
     #   requireClientCert: false
     #   minVersion: "1.2"
-    #   cipherSuites:      # setting this replaces the default list
-    #     - TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256
-    #     - TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384
-    #     - TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256
-    #     - TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384
+    #   cipherSuites: []
     # compression:
-    #   enabled: true
-    #   type: "gzip"       # none | gzip
+    #   enabled: false
+    #   type: "none"
     #   level: -1
     # handshake:
-    #   timeout: "10s"
+    #   timeout: "5s"
     #   contentType: "protobuf:dnstap.Dnstap"
 
   # Network observability — L7 dependency detection via Hubble, Istio, or Caretta.
@@ -262,15 +241,6 @@ config:
     prometheusUrl: ""       # empty = in-cluster discovery
     source: ""              # empty = auto-detect; or "hubble" | "istio" | "caretta"
     prometheusTimeout: "10s"
-    # How long a network edge is kept after it stops being observed (Edge default: 2h).
-    # edgeExistenceTtl: "2h"
-    # Namespaces whose network flows are dropped before collection. Edge default:
-    # [kube-system, monitoring]. Setting this REPLACES the default, it does not
-    # append (use [] to exclude nothing). Namespaces listed in a deny-mode
-    # kube.namespaceFilter are added by the Edge on top of this list.
-    # excludeNamespaces:
-    #   - kube-system
-    #   - monitoring
 
   # Publishing configuration
   enablePublishing: true
@@ -295,33 +265,6 @@ config:
     heartbeat:
       url: ""
       interval: "10s"
-
-  # ConfigMap value capture. Hash-by-default so raw customer configuration never
-  # leaves the cluster. Set clearText: true to send values verbatim (still
-  # subject to redactKeyPatterns and captureCap).
-  configMapCapture:
-    # false (default): every ConfigMap value is sent as a sha256 hash.
-    # true: values are sent in the clear, except keys matching redactKeyPatterns.
-    clearText: false
-    # In clear-text mode, ConfigMap data keys matching any of these regexes are
-    # hashed instead of sent verbatim (e.g. secrets embedded in a ConfigMap).
-    redactKeyPatterns: []
-    # - "(?i)(password|passwd|secret|token|apikey|api_key|private_key)"
-    # Per-value byte cap for clear-text values. Values over the cap are trimmed
-    # (Brain is told the value was trimmed). Hashes always cover the full value.
-    captureCap: 4096
-
-  # Container env-var value capture. Hash-by-default so a plaintext credential in
-  # an env var never leaves the cluster. Same model as configMapCapture.
-  envCapture:
-    # false (default): every literal env value is sent as a sha256 hash.
-    # true: literal values are sent in the clear, except names matching redactKeyPatterns.
-    clearText: false
-    # In clear-text mode, env var names matching any of these regexes stay hashed.
-    redactKeyPatterns: []
-    # - "(?i)(password|passwd|secret|token|apikey|api_key|private_key)"
-    # Per-value byte cap for clear-text values (over-cap values trimmed, flagged).
-    captureCap: 4096
 
 # Environment variables
 env: []

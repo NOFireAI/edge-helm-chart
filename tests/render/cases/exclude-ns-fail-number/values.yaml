@@ -1,0 +1,1 @@
+config: {netobs: {excludeNamespaces: [1, 2]}}

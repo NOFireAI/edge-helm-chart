@@ -1,0 +1,5 @@
+config:
+  kube:
+    namespaceFilter:
+      mode: bogus
+      namespaces: [a]

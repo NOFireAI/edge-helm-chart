@@ -1,0 +1,79 @@
+suite: configmap
+templates:
+  - templates/configmap.yaml
+tests:
+  - it: renders a config.json ConfigMap with defaults
+    asserts:
+      - isKind:
+          of: ConfigMap
+      - matchRegex:
+          path: metadata.name
+          pattern: -config$
+      - exists:
+          path: data["config.json"]
+
+  - it: fails when namespaces are set without a mode
+    set:
+      config.kube.namespaceFilter.namespaces: [a]
+    asserts:
+      - failedTemplate:
+          errorPattern: disables filtering
+
+  - it: fails when mode is allow with no namespaces
+    set:
+      config.kube.namespaceFilter.mode: allow
+    asserts:
+      - failedTemplate:
+          errorPattern: mode is "allow" but
+
+  - it: fails on an unknown mode
+    set:
+      config.kube.namespaceFilter.mode: bogus
+      config.kube.namespaceFilter.namespaces: [a]
+    asserts:
+      - failedTemplate:
+          errorPattern: must be one of
+
+  - it: fails on a non-string excludeNamespaces entry
+    set:
+      config.netobs.excludeNamespaces: [1, 2]
+    asserts:
+      - failedTemplate:
+          errorPattern: excludeNamespaces entry 1 must be a string
+
+  - it: keeps excludeNamespaces entries the Edge accepts, such as uppercase
+    set:
+      config.netobs.excludeNamespaces: ["Prod_1"]
+    asserts:
+      - matchRegex:
+          path: data["config.json"]
+          pattern: '"excludeNamespaces": \["Prod_1"\]'
+
+  - it: fails on an edgeExistenceTtl that is not a duration
+    set:
+      config.netobs.edgeExistenceTtl: not-a-duration
+    asserts:
+      - failedTemplate:
+          errorPattern: edgeExistenceTtl "not-a-duration" is not a valid duration
+
+  - it: fails on an edgeExistenceTtl without a unit
+    set:
+      config.netobs.edgeExistenceTtl: "30"
+    asserts:
+      - failedTemplate:
+          errorPattern: edgeExistenceTtl "30" is not a valid duration
+
+  - it: accepts Go duration syntax for edgeExistenceTtl
+    set:
+      config.netobs.edgeExistenceTtl: -1h30m
+    asserts:
+      - matchRegex:
+          path: data["config.json"]
+          pattern: '"edgeExistenceTtl": "-1h30m"'
+
+  - it: fails on an unknown namespaceFilter key
+    set:
+      config.kube.namespaceFilter.node: allow
+    asserts:
+      - failedTemplate:
+          errorPattern: namespaceFilter has unknown key "node"
