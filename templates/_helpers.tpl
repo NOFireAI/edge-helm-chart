@@ -197,3 +197,30 @@ Writes nothing itself: call it as `{{- $_ := include "nofire-edge.typedPick" (di
 {{- end -}}
 {{- $out | toJson -}}
 {{- end -}}
+
+{{- /*
+nofire-edge.captureJson: the Edge configMapCapture / envCapture object for
+.src (a values map; .path prefixes error messages). Starts from the Edge
+defaults, so unset keys render as defaults. The Edge only logs and skips an
+invalid redactKeyPatterns regex, which with clearText would send the value in
+the clear, so unknown keys and bad regexes fail the render instead.
+*/ -}}
+{{- define "nofire-edge.captureJson" -}}
+{{- $src := .src | default dict -}}
+{{- $path := .path -}}
+{{- if not (kindIs "map" $src) -}}{{- fail (printf "%s must be a map" $path) -}}{{- end -}}
+{{- range $key, $_ := $src -}}
+{{- if not (has $key (list "clearText" "captureCap" "redactKeyPatterns")) -}}
+{{- fail (printf "%s has unknown key %q; supported keys are clearText, captureCap and redactKeyPatterns" $path $key) -}}
+{{- end -}}
+{{- end -}}
+{{- $out := dict "clearText" false "captureCap" 4096 "redactKeyPatterns" list -}}
+{{- $_ := include "nofire-edge.typedPick" (dict "src" $src "path" $path "out" $out "spec" (dict "clearText" "bool" "captureCap" "int" "redactKeyPatterns" "strlist")) -}}
+{{- range $p := $out.redactKeyPatterns -}}
+{{- /* regexMatch reports a pattern that does not compile as false, but "|^" matches "" otherwise. */ -}}
+{{- if not (regexMatch (printf "(?:%s)|^" $p) "") -}}{{- fail (printf "%s.redactKeyPatterns entry %q is not a valid regex" $path $p) -}}{{- end -}}
+{{- /* A pattern like "a)|(b" passes the check above; regexFind rejects it. */ -}}
+{{- $_ := regexFind $p "" -}}
+{{- end -}}
+{{- $out | toJson -}}
+{{- end -}}

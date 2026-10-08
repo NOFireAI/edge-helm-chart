@@ -110,26 +110,6 @@ data:
         "excludeNamespaces": {{ $netobsEx.excludeNamespaces | toJson }}
         {{- end }}
       },
-      {{- $cmc := .Values.config.configMapCapture | default dict }}
-      "configMapCapture": {
-        "clearText": {{ $cmc.clearText | default false }},
-        "captureCap": {{ $cmc.captureCap | default 4096 }},
-        "redactKeyPatterns": [
-          {{- range $index, $pattern := $cmc.redactKeyPatterns }}
-          {{- if $index }},{{ end }}
-          {{ $pattern | quote }}
-          {{- end }}
-        ]
-      },
-      {{- $envc := .Values.config.envCapture | default dict }}
-      "envCapture": {
-        "clearText": {{ $envc.clearText | default false }},
-        "captureCap": {{ $envc.captureCap | default 4096 }},
-        "redactKeyPatterns": [
-          {{- range $index, $pattern := $envc.redactKeyPatterns }}
-          {{- if $index }},{{ end }}
-          {{ $pattern | quote }}
-          {{- end }}
-        ]
-      }
+      "configMapCapture": {{ include "nofire-edge.captureJson" (dict "src" .Values.config.configMapCapture "path" "config.configMapCapture") }},
+      "envCapture": {{ include "nofire-edge.captureJson" (dict "src" .Values.config.envCapture "path" "config.envCapture") }}
     }

@@ -1,0 +1,1 @@
+.configMapCapture == {"clearText": true, "captureCap": 100, "redactKeyPatterns": ["(?i)secret", "^tok"]} and .envCapture == {"clearText": true, "captureCap": 200, "redactKeyPatterns": ["(?i)password"]}

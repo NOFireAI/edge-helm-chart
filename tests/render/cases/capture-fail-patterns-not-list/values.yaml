@@ -1,0 +1,3 @@
+config:
+  configMapCapture:
+    redactKeyPatterns: foo

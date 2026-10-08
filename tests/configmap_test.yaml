@@ -85,3 +85,75 @@ tests:
       - matchRegex:
           path: data["config.json"]
           pattern: '"maxConns":1048576'
+
+  - it: fails on a captureCap that is not an integer
+    set:
+      config.envCapture.captureCap: 4k
+    asserts:
+      - failedTemplate:
+          errorPattern: config.envCapture.captureCap must be an integer
+
+  - it: fails on a clearText that is not a boolean
+    set:
+      config.configMapCapture.clearText: "yes"
+    asserts:
+      - failedTemplate:
+          errorPattern: config.configMapCapture.clearText must be a boolean
+
+  - it: fails when redactKeyPatterns is not a list
+    set:
+      config.configMapCapture.redactKeyPatterns: foo
+    asserts:
+      - failedTemplate:
+          errorPattern: redactKeyPatterns must be a list
+
+  - it: fails when a capture block is not a map
+    set:
+      config.configMapCapture: 5
+    asserts:
+      - failedTemplate:
+          errorPattern: config.configMapCapture must be a map
+
+  - it: fails on an unknown capture key
+    set:
+      config.envCapture.redactKeyPattern: [x]
+    asserts:
+      - failedTemplate:
+          errorPattern: config.envCapture has unknown key "redactKeyPattern"
+
+  - it: fails on a redactKeyPatterns entry that is not a valid regex
+    set:
+      config.configMapCapture.redactKeyPatterns: ["(unclosed"]
+    asserts:
+      - failedTemplate:
+          errorPattern: is not a valid regex
+
+  - it: keeps an explicit captureCap of 0
+    set:
+      config.configMapCapture.captureCap: 0
+    asserts:
+      - matchRegex:
+          path: data["config.json"]
+          pattern: '"configMapCapture": \{"captureCap":0,'
+      - matchRegex:
+          path: data["config.json"]
+          pattern: '"envCapture": \{"captureCap":4096,'
+
+  - it: renders both capture blocks as typed JSON
+    set:
+      config.envCapture.clearText: true
+      config.envCapture.redactKeyPatterns: ["(?i)secret"]
+    asserts:
+      - matchRegex:
+          path: data["config.json"]
+          pattern: '"envCapture": \{"captureCap":4096,"clearText":true,"redactKeyPatterns":\["\(\?i\)secret"\]\}'
+      - matchRegex:
+          path: data["config.json"]
+          pattern: '"configMapCapture": \{"captureCap":4096,"clearText":false,"redactKeyPatterns":\[\]\}'
+
+  - it: fails on a pattern that only compiles once wrapped in a group
+    set:
+      config.configMapCapture.redactKeyPatterns: ["a)|(b"]
+    asserts:
+      - failedTemplate:
+          errorPattern: error parsing regexp

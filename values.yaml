@@ -309,6 +309,7 @@ config:
     # - "(?i)(password|passwd|secret|token|apikey|api_key|private_key)"
     # Per-value byte cap for clear-text values. Values over the cap are trimmed
     # (Brain is told the value was trimmed). Hashes always cover the full value.
+    # 0, negative or unset uses the Edge default of 4096.
     captureCap: 4096
 
   # Container env-var value capture. Hash-by-default so a plaintext credential in
@@ -321,6 +322,7 @@ config:
     redactKeyPatterns: []
     # - "(?i)(password|passwd|secret|token|apikey|api_key|private_key)"
     # Per-value byte cap for clear-text values (over-cap values trimmed, flagged).
+    # 0, negative or unset uses the Edge default of 4096.
     captureCap: 4096
 
 # Environment variables

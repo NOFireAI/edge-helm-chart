@@ -1,0 +1,9 @@
+config:
+  configMapCapture:
+    clearText: true
+    captureCap: 100
+    redactKeyPatterns: ["(?i)secret", "^tok"]
+  envCapture:
+    clearText: true
+    captureCap: 200
+    redactKeyPatterns: ["(?i)password"]
