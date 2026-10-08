@@ -13,3 +13,11 @@ config:
   netobs:
     excludeNamespaces: [x]
     edgeExistenceTtl: 1h
+  # Exercises typed rendering: captureCap 0 must survive, and 1048576 is a
+  # whole-number float when read from a values file.
+  configMapCapture:
+    clearText: true
+    captureCap: 0
+    redactKeyPatterns: ["(?i)secret"]
+  envCapture:
+    captureCap: 1048576
