@@ -1,0 +1,15 @@
+suite: rbac
+templates:
+  - templates/rbac.yaml
+tests:
+  - it: lets the default ClusterRole read endpoints
+    documentSelector:
+      path: kind
+      value: ClusterRole
+    asserts:
+      - contains:
+          path: rules[0].resources
+          content: endpoints
+      - equal:
+          path: rules[0].verbs
+          value: [get, list, watch]

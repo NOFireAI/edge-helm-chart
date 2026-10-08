@@ -54,6 +54,7 @@ config:
       - "pods"
       - "nodes"  
       - "k8services"
+      - "endpoints"
       - "services"
       - "configmaps"
       - "secrets"
