@@ -1,0 +1,3 @@
+.services == {"workers": 8, "maxConns": 100,
+  "tls": {"enabled": true, "requireClientCert": false},
+  "compression": {"enabled": false, "level": -1}}

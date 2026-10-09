@@ -2,7 +2,7 @@
 image:
   #repository: localhost:50001/nofire-edge
   repository: nofireai/edge
-  tag: "latest"
+  tag: "v3.6.0"
   pullPolicy: Always
 
 imagePullSecrets: []
@@ -54,6 +54,7 @@ config:
       - "pods"
       - "nodes"  
       - "k8services"
+      - "endpoints"
       - "services"
       - "configmaps"
       - "secrets"
@@ -66,6 +67,10 @@ config:
       - "jobs"
       - "ingresses"
       - "namespaces"
+    # Scope the graph to specific namespaces (default: all). See values.yaml.
+    # namespaceFilter:
+    #   mode: deny
+    #   namespaces: ["kube-system"]
   
   # Enable publishing with real endpoints
   enablePublishing: false

@@ -24,6 +24,39 @@ data:
           {{ $resource | quote }}
           {{- end }}
         ]
+        {{- $nfRaw := .Values.config.kube.namespaceFilter }}
+        {{- if and (hasKey .Values.config.kube "namespaceFilter") (not (kindIs "invalid" $nfRaw)) (not (kindIs "map" $nfRaw)) }}
+        {{- fail "config.kube.namespaceFilter must be a map" }}
+        {{- end }}
+        {{- range $key, $_ := $nfRaw }}
+        {{- if not (has $key (list "mode" "namespaces")) }}
+        {{- fail (printf "config.kube.namespaceFilter has unknown key %q; supported keys are mode and namespaces" $key) }}
+        {{- end }}
+        {{- end }}
+        {{- $nf := dict }}
+        {{- $_ := include "nofire-edge.typedPick" (dict "src" $nfRaw "path" "config.kube.namespaceFilter" "out" $nf "spec" (dict "mode" "string" "namespaces" "strlist")) }}
+        {{- if $nf }}
+        {{- /* Mirror the Edge's validation so a bad filter fails at install, not as a crashloop. */}}
+        {{- $mode := get $nf "mode" | default "" }}
+        {{- $namespaces := get $nf "namespaces" | default list }}
+        {{- if has $mode (list "" "none") }}
+        {{- if $namespaces }}
+        {{- fail (printf "config.kube.namespaceFilter.namespaces is set but mode %q disables filtering; set config.kube.namespaceFilter.mode to 'allow' or 'deny'" $mode) }}
+        {{- end }}
+        {{- else if has $mode (list "allow" "deny") }}
+        {{- if not $namespaces }}
+        {{- fail (printf "config.kube.namespaceFilter.mode is %q but config.kube.namespaceFilter.namespaces is empty" $mode) }}
+        {{- end }}
+        {{- range $ns := $namespaces }}
+        {{- if not (and (le (len $ns) 63) (regexMatch "^[a-z0-9]([-a-z0-9]*[a-z0-9])?$" $ns)) }}
+        {{- fail (printf "config.kube.namespaceFilter.namespaces entry %q is not a valid namespace name (a lowercase DNS-1123 label of at most 63 characters)" $ns) }}
+        {{- end }}
+        {{- end }}
+        {{- else }}
+        {{- fail (printf "config.kube.namespaceFilter.mode must be one of '', 'none', 'allow', 'deny' (got %q)" $mode) }}
+        {{- end }},
+        "namespaceFilter": {{ $nf | toJson }}
+        {{- end }}
       },
       "enableCausalAnalysis": {{ .Values.config.enableCausalAnalysis }},
       "causal": {
@@ -38,38 +71,7 @@ data:
         "sampleRate": {{ .Values.config.sentry.sampleRate | default 1.0 }},
         "tracesSampleRate": {{ .Values.config.sentry.tracesSampleRate | default 0.0 }}
       },
-      "services": {
-        "workers": {{ .Values.config.services.workers }}
-        {{- if .Values.config.services.address }},
-        "address": {{ .Values.config.services.address | quote }},
-        "maxConns": {{ .Values.config.services.maxConns }},
-        "readTimeout": {{ .Values.config.services.readTimeout | quote }},
-        "writeTimeout": {{ .Values.config.services.writeTimeout | quote }},
-        "tls": {
-          "enabled": {{ .Values.config.services.tls.enabled | default false }},
-          "certFile": {{ .Values.config.services.tls.certFile | default "" | quote }},
-          "keyFile": {{ .Values.config.services.tls.keyFile | default "" | quote }},
-          "caFile": {{ .Values.config.services.tls.caFile | default "" | quote }},
-          "requireClientCert": {{ .Values.config.services.tls.requireClientCert | default false }},
-          "minVersion": {{ .Values.config.services.tls.minVersion | default "" | quote }},
-          "cipherSuites": [
-            {{- range $index, $suite := .Values.config.services.tls.cipherSuites }}
-            {{- if $index }},{{ end }}
-            {{ $suite | quote }}
-            {{- end }}
-          ]
-        },
-        "compression": {
-          "enabled": {{ .Values.config.services.compression.enabled | default false }},
-          "type": {{ .Values.config.services.compression.type | default "" | quote }},
-          "level": {{ .Values.config.services.compression.level | default -1 }}
-        },
-        "handshake": {
-          "timeout": {{ .Values.config.services.handshake.timeout | default "" | quote }},
-          "contentType": {{ .Values.config.services.handshake.contentType | default "" | quote }}
-        }
-        {{- end }}
-      },
+      "services": {{ include "nofire-edge.servicesJson" . }},
       "enablePublishing": {{ .Values.config.enablePublishing }},
       "publisher": {
         "apiKey": {{ if .Values.config.publisher.apiKeySecret.enabled }}"{NOFIRE_API_KEY}"{{ else }}{{ .Values.config.publisher.apiKey | default "" | quote }}{{ end }},
@@ -92,5 +94,22 @@ data:
         "prometheusUrl": {{ .Values.config.netobs.prometheusUrl | default "" | quote }},
         "source": {{ .Values.config.netobs.source | default "" | quote }},
         "prometheusTimeout": {{ .Values.config.netobs.prometheusTimeout | default "10s" | quote }}
-      }
+        {{- if and (hasKey .Values.config.netobs "edgeExistenceTtl") (not (kindIs "invalid" .Values.config.netobs.edgeExistenceTtl)) }}
+        {{- if not (kindIs "string" .Values.config.netobs.edgeExistenceTtl) }}
+        {{- fail (printf "config.netobs.edgeExistenceTtl must be a duration string like 2h (got %v)" .Values.config.netobs.edgeExistenceTtl) }}
+        {{- end }}
+        {{- /* Go duration syntax: optional sign, then number+unit pairs ("1h30m", "1.5h"), or plain "0". */}}
+        {{- if not (regexMatch "^([-+]?(([0-9]+[.]?[0-9]*|[.][0-9]+)(ns|us|µs|μs|ms|s|m|h))+|[-+]?0)$" .Values.config.netobs.edgeExistenceTtl) }}
+        {{- fail (printf "config.netobs.edgeExistenceTtl %q is not a valid duration; use Go syntax such as 2h, 90m or 1h30m" .Values.config.netobs.edgeExistenceTtl) }}
+        {{- end }},
+        "edgeExistenceTtl": {{ .Values.config.netobs.edgeExistenceTtl | quote }}
+        {{- end }}
+        {{- $netobsEx := dict }}
+        {{- $_ := include "nofire-edge.typedPick" (dict "src" .Values.config.netobs "path" "config.netobs" "out" $netobsEx "spec" (dict "excludeNamespaces" "strlist")) }}
+        {{- if hasKey $netobsEx "excludeNamespaces" }},
+        "excludeNamespaces": {{ $netobsEx.excludeNamespaces | toJson }}
+        {{- end }}
+      },
+      "configMapCapture": {{ include "nofire-edge.captureJson" (dict "src" .Values.config.configMapCapture "path" "config.configMapCapture") }},
+      "envCapture": {{ include "nofire-edge.captureJson" (dict "src" .Values.config.envCapture "path" "config.envCapture") }}
     }

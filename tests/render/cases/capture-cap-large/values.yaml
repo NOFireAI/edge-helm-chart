@@ -1,0 +1,3 @@
+config:
+  configMapCapture: {captureCap: 1048576}
+  envCapture: {captureCap: 1048576}

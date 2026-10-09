@@ -19,7 +19,7 @@ spec:
       restartPolicy: Always
       containers:
       - name: client  
-        image: nofireai/edge:latest
+        image: nofireai/edge:v3.6.0
         imagePullPolicy: IfNotPresent
         command: ["/nofire-edge"]
         args: ["--config", "/etc/nofire-edge/config.json"]
@@ -77,7 +77,7 @@ metadata:
   name: nofire-edge
 rules:
 - apiGroups: [""]
-  resources: ["pods", "services", "configmaps", "secrets", "persistentvolumeclaims", "persistentvolumes", "nodes", "namespaces", "resourcequotas", "limitranges"]
+  resources: ["pods", "services", "endpoints", "configmaps", "secrets", "persistentvolumeclaims", "persistentvolumes", "nodes", "namespaces", "resourcequotas", "limitranges"]
   verbs: ["get", "list", "watch"]
 - apiGroups: ["apps"]
   resources: ["deployments", "statefulsets", "daemonsets", "replicasets"]
@@ -141,7 +141,8 @@ data:
         "resources": [
           "pods",
           "nodes",
-          "services",
+          "k8services",
+          "endpoints",
           "configmaps",
           "secrets",
           "persistentvolumeclaims",
@@ -152,7 +153,7 @@ data:
           "daemonsets",
           "jobs",
           "ingresses",
-          "namespaces",
+          "namespaces"
         ]
       },
       "enableCausalAnalysis": true,

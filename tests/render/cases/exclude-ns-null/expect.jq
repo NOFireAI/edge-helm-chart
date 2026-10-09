@@ -1,0 +1,1 @@
+.netobs | has("excludeNamespaces") | not

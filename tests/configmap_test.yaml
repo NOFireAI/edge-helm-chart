@@ -1,0 +1,159 @@
+suite: configmap
+templates:
+  - templates/configmap.yaml
+tests:
+  - it: renders a config.json ConfigMap with defaults
+    asserts:
+      - isKind:
+          of: ConfigMap
+      - matchRegex:
+          path: metadata.name
+          pattern: -config$
+      - exists:
+          path: data["config.json"]
+
+  - it: fails when namespaces are set without a mode
+    set:
+      config.kube.namespaceFilter.namespaces: [a]
+    asserts:
+      - failedTemplate:
+          errorPattern: disables filtering
+
+  - it: fails when mode is allow with no namespaces
+    set:
+      config.kube.namespaceFilter.mode: allow
+    asserts:
+      - failedTemplate:
+          errorPattern: mode is "allow" but
+
+  - it: fails on an unknown mode
+    set:
+      config.kube.namespaceFilter.mode: bogus
+      config.kube.namespaceFilter.namespaces: [a]
+    asserts:
+      - failedTemplate:
+          errorPattern: must be one of
+
+  - it: fails on a non-string excludeNamespaces entry
+    set:
+      config.netobs.excludeNamespaces: [1, 2]
+    asserts:
+      - failedTemplate:
+          errorPattern: excludeNamespaces entry 1 must be a string
+
+  - it: keeps excludeNamespaces entries the Edge accepts, such as uppercase
+    set:
+      config.netobs.excludeNamespaces: ["Prod_1"]
+    asserts:
+      - matchRegex:
+          path: data["config.json"]
+          pattern: '"excludeNamespaces": \["Prod_1"\]'
+
+  - it: fails on an edgeExistenceTtl that is not a duration
+    set:
+      config.netobs.edgeExistenceTtl: not-a-duration
+    asserts:
+      - failedTemplate:
+          errorPattern: edgeExistenceTtl "not-a-duration" is not a valid duration
+
+  - it: fails on an edgeExistenceTtl without a unit
+    set:
+      config.netobs.edgeExistenceTtl: "30"
+    asserts:
+      - failedTemplate:
+          errorPattern: edgeExistenceTtl "30" is not a valid duration
+
+  - it: accepts Go duration syntax for edgeExistenceTtl
+    set:
+      config.netobs.edgeExistenceTtl: -1h30m
+    asserts:
+      - matchRegex:
+          path: data["config.json"]
+          pattern: '"edgeExistenceTtl": "-1h30m"'
+
+  - it: fails on an unknown namespaceFilter key
+    set:
+      config.kube.namespaceFilter.node: allow
+    asserts:
+      - failedTemplate:
+          errorPattern: namespaceFilter has unknown key "node"
+
+  - it: accepts a whole number given as a float from a values file
+    values:
+      - values/large-ints.yaml
+    asserts:
+      - matchRegex:
+          path: data["config.json"]
+          pattern: '"maxConns":1048576'
+
+  - it: fails on a captureCap that is not an integer
+    set:
+      config.envCapture.captureCap: 4k
+    asserts:
+      - failedTemplate:
+          errorPattern: config.envCapture.captureCap must be an integer
+
+  - it: fails on a clearText that is not a boolean
+    set:
+      config.configMapCapture.clearText: "yes"
+    asserts:
+      - failedTemplate:
+          errorPattern: config.configMapCapture.clearText must be a boolean
+
+  - it: fails when redactKeyPatterns is not a list
+    set:
+      config.configMapCapture.redactKeyPatterns: foo
+    asserts:
+      - failedTemplate:
+          errorPattern: redactKeyPatterns must be a list
+
+  - it: fails when a capture block is not a map
+    set:
+      config.configMapCapture: 5
+    asserts:
+      - failedTemplate:
+          errorPattern: config.configMapCapture must be a map
+
+  - it: fails on an unknown capture key
+    set:
+      config.envCapture.redactKeyPattern: [x]
+    asserts:
+      - failedTemplate:
+          errorPattern: config.envCapture has unknown key "redactKeyPattern"
+
+  - it: fails on a redactKeyPatterns entry that is not a valid regex
+    set:
+      config.configMapCapture.redactKeyPatterns: ["(unclosed"]
+    asserts:
+      - failedTemplate:
+          errorPattern: is not a valid regex
+
+  - it: keeps an explicit captureCap of 0
+    set:
+      config.configMapCapture.captureCap: 0
+    asserts:
+      - matchRegex:
+          path: data["config.json"]
+          pattern: '"configMapCapture": \{"captureCap":0,'
+      - matchRegex:
+          path: data["config.json"]
+          pattern: '"envCapture": \{"captureCap":4096,'
+
+  - it: renders both capture blocks as typed JSON
+    set:
+      config.envCapture.clearText: true
+      config.envCapture.redactKeyPatterns: ["(?i)secret"]
+    asserts:
+      - matchRegex:
+          path: data["config.json"]
+          pattern: '"envCapture": \{"captureCap":4096,"clearText":true,"redactKeyPatterns":\["\(\?i\)secret"\]\}'
+      - matchRegex:
+          path: data["config.json"]
+          pattern: '"configMapCapture": \{"captureCap":4096,"clearText":false,"redactKeyPatterns":\[\]\}'
+
+  - it: fails on a pattern that only compiles once wrapped in a group
+    set:
+      config.configMapCapture.redactKeyPatterns: ["a)|(b"]
+    asserts:
+      - failedTemplate:
+          errorPattern: error parsing regexp

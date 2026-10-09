@@ -1,0 +1,1 @@
+.kube | has("namespaceFilter") | not

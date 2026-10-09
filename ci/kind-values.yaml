@@ -1,0 +1,23 @@
+# Values for tests/e2e/kind.sh: a local kind cluster with no backend.
+image:
+  pullPolicy: IfNotPresent
+
+config:
+  # Publishing needs a graph URL and API key; the e2e only needs the Edge to
+  # accept its config and start.
+  enablePublishing: false
+  kube:
+    namespaceFilter:
+      mode: allow
+      namespaces: [default]
+  netobs:
+    excludeNamespaces: [x]
+    edgeExistenceTtl: 1h
+  # Exercises typed rendering: captureCap 0 must survive, and 1048576 is a
+  # whole-number float when read from a values file.
+  configMapCapture:
+    clearText: true
+    captureCap: 0
+    redactKeyPatterns: ["(?i)secret"]
+  envCapture:
+    captureCap: 1048576

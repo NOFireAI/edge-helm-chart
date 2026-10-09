@@ -1,0 +1,3 @@
+config:
+  configMapCapture: {clearText: "true", captureCap: "512"}
+  envCapture: {clearText: "false", captureCap: "8192"}
