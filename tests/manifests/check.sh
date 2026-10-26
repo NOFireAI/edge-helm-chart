@@ -23,6 +23,14 @@ check "kube.resources has no services" jq -e '.kube.resources | index("services"
 role="$(yq -o=json 'select(.kind == "ClusterRole")' "$file")"
 check "ClusterRole core rule has endpoints" \
   jq -e '.rules[] | select(.apiGroups == [""]) | .resources | index("endpoints")' <<<"$role"
+check "ClusterRole reads cronjobs" \
+  jq -e '.rules[] | select(.apiGroups == ["batch"]) | .resources | index("cronjobs")' <<<"$role"
+check "ClusterRole reads priorityclasses" \
+  jq -e '.rules[] | select(.apiGroups == ["scheduling.k8s.io"]) | .resources | index("priorityclasses")' <<<"$role"
+check "ClusterRole reads clusterrolebindings" \
+  jq -e '.rules[] | select(.apiGroups == ["rbac.authorization.k8s.io"]) | .resources | index("clusterrolebindings")' <<<"$role"
+check "ClusterRole reads Calico ipamconfigs" \
+  jq -e '.rules[] | select(.apiGroups == ["crd.projectcalico.org"]) | .resources | index("ipamconfigs")' <<<"$role"
 
 app_version="$(yq -r .appVersion "$root/Chart.yaml")"
 images="$(yq -r 'select(.kind == "Deployment") | .spec.template.spec.containers[].image' "$file")"

@@ -13,3 +13,32 @@ tests:
       - equal:
           path: rules[0].verbs
           value: [get, list, watch]
+  - it: lets the default ClusterRole read the CronJob, PriorityClass, RBAC and Calico kinds
+    documentSelector:
+      path: kind
+      value: ClusterRole
+    asserts:
+      - contains:
+          path: rules
+          content:
+            apiGroups: [batch]
+            resources: [jobs, cronjobs]
+            verbs: [get, list, watch]
+      - contains:
+          path: rules
+          content:
+            apiGroups: [scheduling.k8s.io]
+            resources: [priorityclasses]
+            verbs: [get, list, watch]
+      - contains:
+          path: rules
+          content:
+            apiGroups: [rbac.authorization.k8s.io]
+            resources: [roles, clusterroles, rolebindings, clusterrolebindings]
+            verbs: [get, list, watch]
+      - contains:
+          path: rules
+          content:
+            apiGroups: [crd.projectcalico.org]
+            resources: [ippools, bgppeers, ipamconfigs]
+            verbs: [get, list, watch]
