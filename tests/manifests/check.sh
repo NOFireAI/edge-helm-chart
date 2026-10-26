@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # Checks the standalone manifests.yaml: the embedded config.json is valid and
-# watches the informers the chart does, the ClusterRole can read endpoints and
+# lists endpoints and k8services but not services (its list differs from the
+# chart default, which has services), the ClusterRole can read endpoints and
 # the CronJob, PriorityClass, RBAC and Calico kinds, and the image tag matches
 # the chart appVersion. Needs yq and jq.
 # Usage: tests/manifests/check.sh

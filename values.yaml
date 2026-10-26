@@ -208,7 +208,9 @@ config:
       - "namespaces"
       - "services"
       # Opt-in kinds, off by default. The ClusterRole already grants get, list
-      # and watch on them, so adding a name here is enough.
+      # and watch on them. The three calico* kinds also need Calico's CRDs
+      # (crd.projectcalico.org/v1) installed in the cluster; the agent skips
+      # them otherwise.
       # - "cronjobs"
       # - "priorityclasses"
       # - "roles"
