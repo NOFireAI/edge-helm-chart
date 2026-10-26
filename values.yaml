@@ -207,6 +207,19 @@ config:
       - "ingresses" 
       - "namespaces"
       - "services"
+      # Opt-in kinds, off by default. The ClusterRole already grants get, list
+      # and watch on them. The three calico* kinds also need Calico's CRDs
+      # (crd.projectcalico.org/v1) installed in the cluster; the agent skips
+      # them otherwise.
+      # - "cronjobs"
+      # - "priorityclasses"
+      # - "roles"
+      # - "clusterroles"
+      # - "rolebindings"
+      # - "clusterrolebindings"
+      # - "calicoippools"
+      # - "calicobgppeers"
+      # - "calicoipamconfigs"
     # Restrict which namespaces enter the resource graph. Unset (or mode "none")
     # means every namespace is graphed. The chart fails the render on invalid
     # combinations, mirroring the Edge's own validation:

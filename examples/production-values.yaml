@@ -49,7 +49,8 @@ config:
   
   kube:
     resyncInterval: "2m"
-    # Monitor all available resources
+    # Monitor the default resource kinds. The opt-in kinds listed in values.yaml
+    # (cronjobs, priorityclasses, RBAC, Calico) are not enabled here.
     resources:
       - "pods"
       - "nodes"  
