@@ -207,6 +207,17 @@ config:
       - "ingresses" 
       - "namespaces"
       - "services"
+      # Opt-in kinds, off by default. The ClusterRole already grants get, list
+      # and watch on them, so adding a name here is enough.
+      # - "cronjobs"
+      # - "priorityclasses"
+      # - "roles"
+      # - "clusterroles"
+      # - "rolebindings"
+      # - "clusterrolebindings"
+      # - "calicoippools"
+      # - "calicobgppeers"
+      # - "calicoipamconfigs"
     # Restrict which namespaces enter the resource graph. Unset (or mode "none")
     # means every namespace is graphed. The chart fails the render on invalid
     # combinations, mirroring the Edge's own validation:

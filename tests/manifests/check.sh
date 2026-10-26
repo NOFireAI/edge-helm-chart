@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # Checks the standalone manifests.yaml: the embedded config.json is valid and
-# watches the informers the chart does, the ClusterRole can read endpoints, and
-# the image tag matches the chart appVersion. Needs yq and jq.
+# watches the informers the chart does, the ClusterRole can read endpoints and
+# the CronJob, PriorityClass, RBAC and Calico kinds, and the image tag matches
+# the chart appVersion. Needs yq and jq.
 # Usage: tests/manifests/check.sh
 set -euo pipefail
 
