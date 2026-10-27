@@ -2,7 +2,7 @@
 image:
   #repository: localhost:50001/nofire-edge
   repository: nofireai/edge
-  tag: "v3.6.0"
+  tag: "v3.7.0"
   pullPolicy: Always
 
 imagePullSecrets: []
