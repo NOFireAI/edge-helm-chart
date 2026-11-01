@@ -338,6 +338,11 @@ config:
     # 0, negative or unset uses the Edge default of 4096.
     captureCap: 4096
 
+# GODEBUG for the edge and edge-proxy containers. The default turns off the
+# MPTCP listeners Go 1.24+ opens, the precondition for the CVE-2026-98432
+# exploit. "" omits it; a GODEBUG entry in env overrides it on edge.
+godebug: "multipathtcp=0"
+
 # Environment variables
 env: []
 # - name: NODE_NAME

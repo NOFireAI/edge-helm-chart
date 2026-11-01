@@ -34,6 +34,10 @@ check "ClusterRole reads clusterrolebindings" \
 check "ClusterRole reads Calico ipamconfigs" \
   jq -e '.rules[] | select(.apiGroups == ["crd.projectcalico.org"]) | .resources | index("ipamconfigs")' <<<"$role"
 
+env="$(yq -o=json 'select(.kind == "Deployment") | .spec.template.spec.containers[0].env' "$file")"
+check "edge container sets GODEBUG=multipathtcp=0" \
+  jq -e '.[] | select(.name == "GODEBUG" and .value == "multipathtcp=0")' <<<"$env"
+
 app_version="$(yq -r .appVersion "$root/Chart.yaml")"
 images="$(yq -r 'select(.kind == "Deployment") | .spec.template.spec.containers[].image' "$file")"
 check "nofireai/edge image tag is appVersion $app_version" grep -Fxq "nofireai/edge:$app_version" <<<"$images"

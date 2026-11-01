@@ -32,6 +32,7 @@ helm install nofire-edge nofire/nofire-edge \
 | `config.publisher.graph.url` | NOFire API endpoint | `https://my.nofire.ai/api/edge` | No |
 | `service.clusterIP` | Static ClusterIP (recommended) | `""` | No |
 | `monitoring.serviceMonitor.enabled` | Enable Prometheus ServiceMonitor | `false` | No |
+| `godebug` | `GODEBUG` for the edge and edge-proxy containers. The default turns off MPTCP listeners (CVE-2026-98432). `""` omits it; a `GODEBUG` entry in `env` overrides it on edge. | `multipathtcp=0` | No |
 
 ## Edge Proxy (On-Prem Connections)
 

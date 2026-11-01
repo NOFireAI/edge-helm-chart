@@ -41,6 +41,9 @@ spec:
                 secretKeyRef:
                   name: nofire-credentials
                   key: api-key
+            {{- with include "nofire-edge.godebugEnv" (dict "root" . "checkEnv" false) }}
+            {{- . | nindent 12 }}
+            {{- end }}
           ports:
             - name: http
               containerPort: {{ .Values.edgeProxy.serverPort }}

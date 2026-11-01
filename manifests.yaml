@@ -30,6 +30,9 @@ spec:
               fieldPath: spec.nodeName
         - name: PORT
           value: "8080"
+        # Turns off MPTCP listeners (CVE-2026-98432).
+        - name: GODEBUG
+          value: "multipathtcp=0"
         resources:
           limits:
             cpu: 200m
