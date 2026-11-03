@@ -27,7 +27,8 @@ tests:
     asserts:
       - notContains:
           path: spec.template.spec.containers[0].env
-          content: {name: GODEBUG, value: multipathtcp=0}
+          content: {name: GODEBUG}
+          any: true
   - it: lets a GODEBUG entry in env win
     template: templates/deployment.yaml
     set:
