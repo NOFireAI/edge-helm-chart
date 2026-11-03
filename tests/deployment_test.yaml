@@ -2,6 +2,9 @@ suite: godebug
 templates:
   - templates/deployment.yaml
   - templates/edge-proxy-deployment.yaml
+  # Included by the deployments for their checksum annotations.
+  - templates/configmap.yaml
+  - templates/edge-proxy-configmap.yaml
 tests:
   - it: sets GODEBUG=multipathtcp=0 on edge by default
     template: templates/deployment.yaml
