@@ -19,7 +19,7 @@ spec:
       restartPolicy: Always
       containers:
       - name: client  
-        image: nofireai/edge:v3.7.0
+        image: nofireai/edge:v3.7.1
         imagePullPolicy: IfNotPresent
         command: ["/nofire-edge"]
         args: ["--config", "/etc/nofire-edge/config.json"]
@@ -30,6 +30,9 @@ spec:
               fieldPath: spec.nodeName
         - name: PORT
           value: "8080"
+        # Turns off MPTCP listeners (CVE-2026-98432).
+        - name: GODEBUG
+          value: "multipathtcp=0"
         resources:
           limits:
             cpu: 200m

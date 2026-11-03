@@ -7,9 +7,9 @@ image:
   repository: nofireai/edge
   pullPolicy: Always
   # Overrides the image tag, which otherwise defaults to the chart appVersion.
-  # Released tags carry the "v" prefix (nofireai/edge:v3.7.0) — a bare "3.7.0"
+  # Released tags carry the "v" prefix (nofireai/edge:v3.7.1) — a bare "3.7.1"
   # does not exist in the registry.
-  tag: "v3.7.0"
+  tag: "v3.7.1"
 
 # Image pull secrets
 imagePullSecrets: []
@@ -337,6 +337,11 @@ config:
     # Per-value byte cap for clear-text values (over-cap values trimmed, flagged).
     # 0, negative or unset uses the Edge default of 4096.
     captureCap: 4096
+
+# GODEBUG for the edge and edge-proxy containers. The default turns off the
+# MPTCP listeners Go 1.24+ opens, the precondition for the CVE-2026-98432
+# exploit. "" omits it; a GODEBUG entry in env overrides it on edge.
+godebug: "multipathtcp=0"
 
 # Environment variables
 env: []

@@ -224,3 +224,22 @@ the clear, so unknown keys and bad regexes fail the render instead.
 {{- end -}}
 {{- $out | toJson -}}
 {{- end -}}
+
+{{/*
+GODEBUG env entry for a Go container, or nothing. A missing godebug key (an
+upgrade with --reuse-values from an older chart) gets the default; "" omits
+it. Pass checkEnv true where .Values.env is rendered: a GODEBUG entry
+there wins.
+*/}}
+{{- define "nofire-edge.godebugEnv" -}}
+{{- $v := .root.Values -}}
+{{- $godebug := ternary $v.godebug "multipathtcp=0" (hasKey $v "godebug") | default "" | toString -}}
+{{- $userSet := false -}}
+{{- if .checkEnv -}}
+{{- range $v.env -}}{{- if eq (toString .name) "GODEBUG" -}}{{- $userSet = true -}}{{- end -}}{{- end -}}
+{{- end -}}
+{{- if and $godebug (not $userSet) -}}
+- name: GODEBUG
+  value: {{ $godebug | quote }}
+{{- end -}}
+{{- end -}}

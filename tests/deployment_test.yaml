@@ -1,0 +1,43 @@
+suite: godebug
+templates:
+  - templates/deployment.yaml
+  - templates/edge-proxy-deployment.yaml
+  # Included by the deployments for their checksum annotations.
+  - templates/configmap.yaml
+  - templates/edge-proxy-configmap.yaml
+tests:
+  - it: sets GODEBUG=multipathtcp=0 on edge by default
+    template: templates/deployment.yaml
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content: {name: GODEBUG, value: multipathtcp=0}
+  - it: sets GODEBUG on edge-proxy too
+    template: templates/edge-proxy-deployment.yaml
+    set:
+      edgeProxy.enabled: true
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content: {name: GODEBUG, value: multipathtcp=0}
+  - it: omits GODEBUG when godebug is empty
+    template: templates/deployment.yaml
+    set:
+      godebug: ""
+    asserts:
+      - notContains:
+          path: spec.template.spec.containers[0].env
+          content: {name: GODEBUG}
+          any: true
+  - it: lets a GODEBUG entry in env win
+    template: templates/deployment.yaml
+    set:
+      env:
+        - {name: GODEBUG, value: "multipathtcp=0,madvdontneed=1"}
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content: {name: GODEBUG, value: "multipathtcp=0,madvdontneed=1"}
+      - notContains:
+          path: spec.template.spec.containers[0].env
+          content: {name: GODEBUG, value: multipathtcp=0}

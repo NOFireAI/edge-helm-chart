@@ -68,6 +68,9 @@ spec:
                   name: {{ .Values.config.publisher.apiKeySecret.name }}
                   key: {{ .Values.config.publisher.apiKeySecret.key }}
             {{- end }}
+            {{- with include "nofire-edge.godebugEnv" (dict "root" . "checkEnv" true) }}
+            {{- . | nindent 12 }}
+            {{- end }}
             {{- with .Values.env }}
             {{- toYaml . | nindent 12 }}
             {{- end }}
