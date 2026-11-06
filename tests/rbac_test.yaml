@@ -42,3 +42,26 @@ tests:
             apiGroups: [crd.projectcalico.org]
             resources: [ippools, bgppeers, ipamconfigs]
             verbs: [get, list, watch]
+  - it: lets the default ClusterRole read IngressClass, Gateway API and Traefik routing kinds
+    documentSelector:
+      path: kind
+      value: ClusterRole
+    asserts:
+      - contains:
+          path: rules
+          content:
+            apiGroups: [networking.k8s.io]
+            resources: [ingresses, ingressclasses, networkpolicies]
+            verbs: [get, list, watch]
+      - contains:
+          path: rules
+          content:
+            apiGroups: [gateway.networking.k8s.io]
+            resources: [gatewayclasses, gateways, httproutes, grpcroutes, tlsroutes, tcproutes, udproutes, referencegrants]
+            verbs: [get, list, watch]
+      - contains:
+          path: rules
+          content:
+            apiGroups: [traefik.io, traefik.containo.us]
+            resources: [ingressroutes, ingressroutetcps, ingressrouteudps, traefikservices]
+            verbs: [get, list, watch]

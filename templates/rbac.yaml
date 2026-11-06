@@ -13,7 +13,7 @@ rules:
   resources: ["deployments", "statefulsets", "daemonsets", "replicasets"]
   verbs: ["get", "list", "watch"]
 - apiGroups: ["networking.k8s.io"]
-  resources: ["ingresses", "networkpolicies"]
+  resources: ["ingresses", "ingressclasses", "networkpolicies"]
   verbs: ["get", "list", "watch"]
 - apiGroups: ["batch"]
   resources: ["jobs", "cronjobs"]
@@ -29,6 +29,12 @@ rules:
   verbs: ["get", "list", "watch"]
 - apiGroups: ["crd.projectcalico.org"]
   resources: ["ippools", "bgppeers", "ipamconfigs"]
+  verbs: ["get", "list", "watch"]
+- apiGroups: ["gateway.networking.k8s.io"]
+  resources: ["gatewayclasses", "gateways", "httproutes", "grpcroutes", "tlsroutes", "tcproutes", "udproutes", "referencegrants"]
+  verbs: ["get", "list", "watch"]
+- apiGroups: ["traefik.io", "traefik.containo.us"]
+  resources: ["ingressroutes", "ingressroutetcps", "ingressrouteudps", "traefikservices"]
   verbs: ["get", "list", "watch"]
 {{- with .Values.rbac.extraRules }}
 {{- toYaml . | nindent 0 }}
