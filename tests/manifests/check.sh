@@ -2,8 +2,8 @@
 # Checks the standalone manifests.yaml: the embedded config.json is valid and
 # lists endpoints and k8services but not services (its list differs from the
 # chart default, which has services), the ClusterRole can read endpoints and
-# the CronJob, PriorityClass, RBAC and Calico kinds, and the image tag matches
-# the chart appVersion. Needs yq and jq.
+# the CronJob, PriorityClass, RBAC, Calico, IngressClass, Gateway API and
+# Traefik kinds, and the image tag matches the chart appVersion. Needs yq and jq.
 # Usage: tests/manifests/check.sh
 set -euo pipefail
 
@@ -33,6 +33,12 @@ check "ClusterRole reads clusterrolebindings" \
   jq -e '.rules[] | select(.apiGroups == ["rbac.authorization.k8s.io"]) | .resources | index("clusterrolebindings")' <<<"$role"
 check "ClusterRole reads Calico ipamconfigs" \
   jq -e '.rules[] | select(.apiGroups == ["crd.projectcalico.org"]) | .resources | index("ipamconfigs")' <<<"$role"
+check "ClusterRole reads ingressclasses" \
+  jq -e '.rules[] | select(.apiGroups == ["networking.k8s.io"]) | .resources | index("ingressclasses")' <<<"$role"
+check "ClusterRole reads Gateway API httproutes and referencegrants" \
+  jq -e '.rules[] | select(.apiGroups == ["gateway.networking.k8s.io"]) | (.resources | index("httproutes")) and (.resources | index("referencegrants"))' <<<"$role"
+check "ClusterRole reads Traefik ingressroutes and traefikservices" \
+  jq -e '.rules[] | select(.apiGroups == ["traefik.io", "traefik.containo.us"]) | (.resources | index("ingressroutes")) and (.resources | index("traefikservices"))' <<<"$role"
 
 env="$(yq -o=json 'select(.kind == "Deployment") | .spec.template.spec.containers[0].env' "$file")"
 check "edge container sets GODEBUG=multipathtcp=0" \

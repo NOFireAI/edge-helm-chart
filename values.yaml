@@ -208,9 +208,10 @@ config:
       - "namespaces"
       - "services"
       # Opt-in kinds, off by default. The ClusterRole already grants get, list
-      # and watch on them. The three calico* kinds also need Calico's CRDs
-      # (crd.projectcalico.org/v1) installed in the cluster; the agent skips
-      # them otherwise.
+      # and watch on them. The calico*, Gateway API and Traefik kinds also need
+      # their CRDs (crd.projectcalico.org/v1, gateway.networking.k8s.io,
+      # traefik.io/v1alpha1 or traefik.containo.us/v1alpha1) installed in the
+      # cluster; the agent skips them otherwise.
       # - "cronjobs"
       # - "priorityclasses"
       # - "roles"
@@ -220,6 +221,19 @@ config:
       # - "calicoippools"
       # - "calicobgppeers"
       # - "calicoipamconfigs"
+      # - "ingressclasses"
+      # - "gatewayclasses"
+      # - "gateways"
+      # - "httproutes"
+      # - "grpcroutes"
+      # - "tlsroutes"
+      # - "tcproutes"
+      # - "udproutes"
+      # - "referencegrants"
+      # - "ingressroutes"
+      # - "ingressroutetcps"
+      # - "ingressrouteudps"
+      # - "traefikservices"
     # Restrict which namespaces enter the resource graph. Unset (or mode "none")
     # means every namespace is graphed. The chart fails the render on invalid
     # combinations, mirroring the Edge's own validation:
