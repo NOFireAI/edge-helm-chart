@@ -109,6 +109,9 @@ rules:
 - apiGroups: ["traefik.io", "traefik.containo.us"]
   resources: ["ingressroutes", "ingressroutetcps", "ingressrouteudps", "traefikservices"]
   verbs: ["get", "list", "watch"]
+- apiGroups: ["admissionregistration.k8s.io"]
+  resources: ["mutatingwebhookconfigurations", "validatingwebhookconfigurations"]
+  verbs: ["get", "list"]
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
