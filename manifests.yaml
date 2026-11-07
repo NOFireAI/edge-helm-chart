@@ -19,7 +19,7 @@ spec:
       restartPolicy: Always
       containers:
       - name: client  
-        image: nofireai/edge:v3.7.1
+        image: nofireai/edge:v3.8.0
         imagePullPolicy: IfNotPresent
         command: ["/nofire-edge"]
         args: ["--config", "/etc/nofire-edge/config.json"]
@@ -171,6 +171,19 @@ data:
           "daemonsets",
           "jobs",
           "ingresses",
+          "ingressclasses",
+          "gatewayclasses",
+          "gateways",
+          "httproutes",
+          "grpcroutes",
+          "tlsroutes",
+          "tcproutes",
+          "udproutes",
+          "referencegrants",
+          "ingressroutes",
+          "ingressroutetcps",
+          "ingressrouteudps",
+          "traefikservices",
           "namespaces"
         ]
       },

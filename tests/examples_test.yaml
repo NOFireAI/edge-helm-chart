@@ -5,12 +5,21 @@ templates:
 values:
   - ../examples/production-values.yaml
 tests:
-  - it: watches endpoints in the production example
+  - it: watches endpoints and routing kinds in the production example
     template: templates/configmap.yaml
     asserts:
       - matchRegex:
           path: data["config.json"]
           pattern: '"endpoints"'
+      - matchRegex:
+          path: data["config.json"]
+          pattern: '"ingressclasses"'
+      - matchRegex:
+          path: data["config.json"]
+          pattern: '"httproutes"'
+      - matchRegex:
+          path: data["config.json"]
+          pattern: '"ingressroutes"'
 
   - it: grants endpoints access in the production example
     template: templates/rbac.yaml

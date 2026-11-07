@@ -7,9 +7,9 @@ image:
   repository: nofireai/edge
   pullPolicy: Always
   # Overrides the image tag, which otherwise defaults to the chart appVersion.
-  # Released tags carry the "v" prefix (nofireai/edge:v3.7.1) — a bare "3.7.1"
+  # Released tags carry the "v" prefix (nofireai/edge:v3.8.0); a bare "3.8.0"
   # does not exist in the registry.
-  tag: "v3.7.1"
+  tag: "v3.8.0"
 
 # Image pull secrets
 imagePullSecrets: []
@@ -204,14 +204,29 @@ config:
       - "statefulsets"
       - "daemonsets"
       - "jobs"
-      - "ingresses" 
+      - "ingresses"
+      - "ingressclasses"
+      - "gatewayclasses"
+      - "gateways"
+      - "httproutes"
+      - "grpcroutes"
+      - "tlsroutes"
+      - "tcproutes"
+      - "udproutes"
+      - "referencegrants"
+      - "ingressroutes"
+      - "ingressroutetcps"
+      - "ingressrouteudps"
+      - "traefikservices"
       - "namespaces"
       - "services"
       # Opt-in kinds, off by default. The ClusterRole already grants get, list
-      # and watch on them. The calico*, Gateway API and Traefik kinds also need
-      # their CRDs (crd.projectcalico.org/v1, gateway.networking.k8s.io,
-      # traefik.io/v1alpha1 or traefik.containo.us/v1alpha1) installed in the
-      # cluster; the agent skips them otherwise.
+      # and watch on them. The three calico* kinds also need Calico's CRDs
+      # (crd.projectcalico.org/v1) installed in the cluster; the agent skips
+      # them otherwise, just as it skips the Gateway API
+      # (gateway.networking.k8s.io) and Traefik (traefik.io/v1alpha1 or
+      # traefik.containo.us/v1alpha1) routing kinds above when their CRDs are
+      # absent.
       # - "cronjobs"
       # - "priorityclasses"
       # - "roles"
@@ -221,19 +236,6 @@ config:
       # - "calicoippools"
       # - "calicobgppeers"
       # - "calicoipamconfigs"
-      # - "ingressclasses"
-      # - "gatewayclasses"
-      # - "gateways"
-      # - "httproutes"
-      # - "grpcroutes"
-      # - "tlsroutes"
-      # - "tcproutes"
-      # - "udproutes"
-      # - "referencegrants"
-      # - "ingressroutes"
-      # - "ingressroutetcps"
-      # - "ingressrouteudps"
-      # - "traefikservices"
     # Restrict which namespaces enter the resource graph. Unset (or mode "none")
     # means every namespace is graphed. The chart fails the render on invalid
     # combinations, mirroring the Edge's own validation:

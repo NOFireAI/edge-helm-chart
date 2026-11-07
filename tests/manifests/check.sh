@@ -1,9 +1,10 @@
 #!/usr/bin/env bash
 # Checks the standalone manifests.yaml: the embedded config.json is valid and
-# lists endpoints and k8services but not services (its list differs from the
-# chart default, which has services), the ClusterRole can read endpoints and
-# the CronJob, PriorityClass, RBAC, Calico, IngressClass, Gateway API and
-# Traefik kinds, and the image tag matches the chart appVersion. Needs yq and jq.
+# lists endpoints, k8services and the IngressClass, Gateway API and Traefik
+# routing kinds but not services (its list differs from the chart default,
+# which has services), the ClusterRole can read endpoints and the CronJob,
+# PriorityClass, RBAC, Calico, IngressClass, Gateway API and Traefik kinds,
+# and the image tag matches the chart appVersion. Needs yq and jq.
 # Usage: tests/manifests/check.sh
 set -euo pipefail
 
@@ -20,6 +21,11 @@ cfg="$(yq 'select(.kind == "ConfigMap") | .data["config.json"]' "$file")"
 check "config.json is valid JSON" jq -e . <<<"$cfg"
 check "kube.resources has endpoints" jq -e '.kube.resources | index("endpoints")' <<<"$cfg"
 check "kube.resources has k8services" jq -e '.kube.resources | index("k8services")' <<<"$cfg"
+check "kube.resources has ingressclasses" jq -e '.kube.resources | index("ingressclasses")' <<<"$cfg"
+check "kube.resources has Gateway API httproutes and referencegrants" \
+  jq -e '(.kube.resources | index("httproutes")) and (.kube.resources | index("referencegrants"))' <<<"$cfg"
+check "kube.resources has Traefik ingressroutes and traefikservices" \
+  jq -e '(.kube.resources | index("ingressroutes")) and (.kube.resources | index("traefikservices"))' <<<"$cfg"
 check "kube.resources has no services" jq -e '.kube.resources | index("services") | not' <<<"$cfg"
 
 role="$(yq -o=json 'select(.kind == "ClusterRole")' "$file")"
