@@ -2,7 +2,7 @@
 image:
   #repository: localhost:50001/nofire-edge
   repository: nofireai/edge
-  tag: "v3.7.1"
+  tag: "v3.8.0"
   pullPolicy: Always
 
 imagePullSecrets: []
@@ -50,8 +50,7 @@ config:
   kube:
     resyncInterval: "2m"
     # Monitor the default resource kinds. The opt-in kinds listed in values.yaml
-    # (cronjobs, priorityclasses, RBAC, Calico, ingressclasses, Gateway API, Traefik)
-    # are not enabled here.
+    # (cronjobs, priorityclasses, RBAC, Calico) are not enabled here.
     resources:
       - "pods"
       - "nodes"  
@@ -68,6 +67,19 @@ config:
       - "daemonsets"
       - "jobs"
       - "ingresses"
+      - "ingressclasses"
+      - "gatewayclasses"
+      - "gateways"
+      - "httproutes"
+      - "grpcroutes"
+      - "tlsroutes"
+      - "tcproutes"
+      - "udproutes"
+      - "referencegrants"
+      - "ingressroutes"
+      - "ingressroutetcps"
+      - "ingressrouteudps"
+      - "traefikservices"
       - "namespaces"
     # Scope the graph to specific namespaces (default: all). See values.yaml.
     # namespaceFilter:
