@@ -2,8 +2,8 @@
 # Checks the standalone manifests.yaml: the embedded config.json is valid and
 # lists endpoints and k8services but not services (its list differs from the
 # chart default, which has services), the ClusterRole can read endpoints and
-# the CronJob, PriorityClass, RBAC and Calico kinds, can get and list the
-# admission webhook configurations, and the image tag matches
+# the CronJob, PriorityClass, RBAC, Calico and admission webhook
+# configuration kinds, and the image tag matches
 # the chart appVersion. Needs yq and jq.
 # Usage: tests/manifests/check.sh
 set -euo pipefail
@@ -34,10 +34,10 @@ check "ClusterRole reads clusterrolebindings" \
   jq -e '.rules[] | select(.apiGroups == ["rbac.authorization.k8s.io"]) | .resources | index("clusterrolebindings")' <<<"$role"
 check "ClusterRole reads Calico ipamconfigs" \
   jq -e '.rules[] | select(.apiGroups == ["crd.projectcalico.org"]) | .resources | index("ipamconfigs")' <<<"$role"
-check "ClusterRole gets and lists both admission webhook configuration kinds" \
+check "ClusterRole reads both admission webhook configuration kinds" \
   jq -e '.rules[] | select(.apiGroups == ["admissionregistration.k8s.io"])
     | (.resources | index("mutatingwebhookconfigurations")) and (.resources | index("validatingwebhookconfigurations"))
-    and .verbs == ["get", "list"]' <<<"$role"
+    and .verbs == ["get", "list", "watch"]' <<<"$role"
 
 env="$(yq -o=json 'select(.kind == "Deployment") | .spec.template.spec.containers[0].env' "$file")"
 check "edge container sets GODEBUG=multipathtcp=0" \

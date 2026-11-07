@@ -42,7 +42,7 @@ tests:
             apiGroups: [crd.projectcalico.org]
             resources: [ippools, bgppeers, ipamconfigs]
             verbs: [get, list, watch]
-  - it: lets the default ClusterRole get and list admission webhook configurations, without watch
+  - it: lets the default ClusterRole read admission webhook configurations
     documentSelector:
       path: kind
       value: ClusterRole
@@ -52,4 +52,4 @@ tests:
           content:
             apiGroups: [admissionregistration.k8s.io]
             resources: [mutatingwebhookconfigurations, validatingwebhookconfigurations]
-            verbs: [get, list]
+            verbs: [get, list, watch]

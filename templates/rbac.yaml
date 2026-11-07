@@ -32,7 +32,7 @@ rules:
   verbs: ["get", "list", "watch"]
 - apiGroups: ["admissionregistration.k8s.io"]
   resources: ["mutatingwebhookconfigurations", "validatingwebhookconfigurations"]
-  verbs: ["get", "list"]
+  verbs: ["get", "list", "watch"]
 {{- with .Values.rbac.extraRules }}
 {{- toYaml . | nindent 0 }}
 {{- end }}
