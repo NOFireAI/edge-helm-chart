@@ -26,6 +26,12 @@ tests:
       - matchRegex:
           path: data["config.json"]
           pattern: '"traefikservices"'
+      - matchRegex:
+          path: data["config.json"]
+          pattern: '"mutatingwebhookconfigurations"'
+      - matchRegex:
+          path: data["config.json"]
+          pattern: '"validatingwebhookconfigurations"'
 
   - it: fails when namespaces are set without a mode
     set:

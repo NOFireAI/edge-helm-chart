@@ -2,7 +2,7 @@
 image:
   #repository: localhost:50001/nofire-edge
   repository: nofireai/edge
-  tag: "v3.9.0"
+  tag: "v3.10.0"
   pullPolicy: Always
 
 imagePullSecrets: []
@@ -81,6 +81,8 @@ config:
       - "ingressrouteudps"
       - "traefikservices"
       - "namespaces"
+      - "mutatingwebhookconfigurations"
+      - "validatingwebhookconfigurations"
     # Scope the graph to specific namespaces (default: all). See values.yaml.
     # namespaceFilter:
     #   mode: deny
