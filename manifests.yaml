@@ -19,7 +19,7 @@ spec:
       restartPolicy: Always
       containers:
       - name: client  
-        image: nofireai/edge:v3.9.0
+        image: nofireai/edge:v3.10.0
         imagePullPolicy: IfNotPresent
         command: ["/nofire-edge"]
         args: ["--config", "/etc/nofire-edge/config.json"]
@@ -187,7 +187,9 @@ data:
           "ingressroutetcps",
           "ingressrouteudps",
           "traefikservices",
-          "namespaces"
+          "namespaces",
+          "mutatingwebhookconfigurations",
+          "validatingwebhookconfigurations"
         ]
       },
       "enableCausalAnalysis": true,

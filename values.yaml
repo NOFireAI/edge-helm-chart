@@ -7,9 +7,9 @@ image:
   repository: nofireai/edge
   pullPolicy: Always
   # Overrides the image tag, which otherwise defaults to the chart appVersion.
-  # Released tags carry the "v" prefix (nofireai/edge:v3.9.0); a bare "3.9.0"
+  # Released tags carry the "v" prefix (nofireai/edge:v3.10.0); a bare "3.10.0"
   # does not exist in the registry.
-  tag: "v3.9.0"
+  tag: "v3.10.0"
 
 # Image pull secrets
 imagePullSecrets: []
@@ -220,6 +220,8 @@ config:
       - "traefikservices"
       - "namespaces"
       - "services"
+      - "mutatingwebhookconfigurations"
+      - "validatingwebhookconfigurations"
       # Opt-in kinds, off by default. The ClusterRole already grants get, list
       # and watch on them. The three calico* kinds also need Calico's CRDs
       # (crd.projectcalico.org/v1) installed in the cluster; the agent skips
