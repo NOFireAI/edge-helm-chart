@@ -7,9 +7,9 @@ image:
   repository: nofireai/edge
   pullPolicy: Always
   # Overrides the image tag, which otherwise defaults to the chart appVersion.
-  # Released tags carry the "v" prefix (nofireai/edge:v3.8.0); a bare "3.8.0"
+  # Released tags carry the "v" prefix (nofireai/edge:v3.9.0); a bare "3.9.0"
   # does not exist in the registry.
-  tag: "v3.8.0"
+  tag: "v3.9.0"
 
 # Image pull secrets
 imagePullSecrets: []
