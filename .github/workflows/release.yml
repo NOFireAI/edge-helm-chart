@@ -13,6 +13,8 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+      # OIDC token for the release metadata role (NOFireAI/terraform#295).
+      id-token: write
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -103,3 +105,108 @@ jobs:
           git add .
           git commit -m "chore(release): ${{ steps.chart.outputs.name }}-${{ steps.chart.outputs.version }}"
           git push
+
+      # Release metadata for the NOFire AI dashboard (NOFireAI/engineering#1983).
+      # The dashboard reads edge/latest.json at https://releases.nofire.ai to pick
+      # the chart version its install commands use, so writing it is what ships
+      # a chart release to customers. tests/dashboard_install_test.yaml is the
+      # gate for that.
+      #
+      # These steps run on every run, not only when a release was created, and
+      # each write is idempotent: a re-run changes nothing, and a manual run
+      # publishes a release that predates them. They are skipped until the
+      # RELEASE_METADATA_ROLE_ARN repository variable is set.
+      - name: Wait for the Helm repo index
+        if: vars.RELEASE_METADATA_ROLE_ARN != ''
+        env:
+          VERSION: ${{ steps.chart.outputs.version }}
+          NAME: ${{ steps.chart.outputs.name }}
+        run: |
+          # GitHub Pages deploys after the push. latest.json must not name a
+          # version `helm repo update` cannot find yet.
+          for _ in $(seq 1 40); do
+            if curl -sSfL https://nofireai.github.io/edge-helm-chart/index.yaml \
+              | yq -e ".entries[\"$NAME\"][] | select(.version == \"$VERSION\")" >/dev/null 2>&1; then
+              echo "$NAME $VERSION is in the index"
+              exit 0
+            fi
+            sleep 15
+          done
+          echo "::error::$NAME $VERSION did not appear in index.yaml within 10 minutes"
+          exit 1
+
+      - name: Configure AWS credentials
+        if: vars.RELEASE_METADATA_ROLE_ARN != ''
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.RELEASE_METADATA_ROLE_ARN }}
+          aws-region: us-east-1
+
+      - name: Publish release metadata
+        if: vars.RELEASE_METADATA_ROLE_ARN != ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+          NAME: ${{ steps.chart.outputs.name }}
+          VERSION: ${{ steps.chart.outputs.version }}
+          BUCKET: releases.nofire.ai
+        run: |
+          set -euo pipefail
+          app_version="$(yq -r '.appVersion' Chart.yaml)"
+          tag="$(yq -r '.image.tag // ""' values.yaml)"
+          tag="${tag:-$app_version}"
+          proxy_tag="$(yq -r '.edgeProxy.image.tag // ""' values.yaml)"
+          proxy_tag="${proxy_tag:-$tag}"
+          release="$(gh release view "$NAME-$VERSION" --json publishedAt,url)"
+
+          jq -n \
+            --arg name "$NAME" \
+            --arg version "$VERSION" \
+            --arg appVersion "$app_version" \
+            --arg edge "$(yq -r '.image.repository' values.yaml):$tag" \
+            --arg edgeProxy "$(yq -r '.edgeProxy.image.repository' values.yaml):$proxy_tag" \
+            --argjson release "$release" \
+            '{
+              schema: 1,
+              chart: {name: $name, version: $version, repo: "https://nofireai.github.io/edge-helm-chart"},
+              edge: {version: $appVersion, images: {edge: $edge, edgeProxy: $edgeProxy}},
+              releasedAt: $release.publishedAt,
+              releaseUrl: $release.url
+            }' > metadata.json
+          cat metadata.json
+
+          # The versioned file is immutable: written once, never replaced.
+          if aws s3api put-object --bucket "$BUCKET" --key "edge/$VERSION.json" \
+            --body metadata.json --content-type application/json \
+            --cache-control 'public, max-age=31536000, immutable' \
+            --if-none-match '*' >/dev/null 2>err.txt; then
+            echo "wrote edge/$VERSION.json"
+          elif grep -q PreconditionFailed err.txt; then
+            echo "edge/$VERSION.json already exists"
+          else
+            cat err.txt
+            exit 1
+          fi
+
+          # latest.json only moves forward, and never to a pre-release. Read it
+          # from S3 rather than through Cloudflare, so a cached copy cannot hide
+          # a newer version. A missing key is a 403: the bucket allows no listing.
+          case "$VERSION" in *-*)
+            echo "$VERSION is a pre-release, leaving latest.json alone"
+            exit 0
+          esac
+          code="$(curl -sS -o latest.json -w '%{http_code}' \
+            "https://s3.us-east-1.amazonaws.com/$BUCKET/edge/latest.json")"
+          case "$code" in
+            200) current="$(jq -r '.chart.version' latest.json)" ;;
+            403|404) current="" ;;
+            *) echo "::error::reading latest.json returned HTTP $code"; exit 1 ;;
+          esac
+          if [ -n "$current" ] && \
+            [ "$(printf '%s\n%s\n' "$current" "$VERSION" | sort -V | tail -1)" = "$current" ]; then
+            echo "latest.json holds $current, not replacing it with $VERSION"
+            exit 0
+          fi
+          aws s3api put-object --bucket "$BUCKET" --key edge/latest.json \
+            --body metadata.json --content-type application/json \
+            --cache-control 'public, max-age=300' >/dev/null
+          echo "latest.json now holds $VERSION (was ${current:-nothing})"
