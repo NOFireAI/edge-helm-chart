@@ -109,13 +109,19 @@ jobs:
       # Release metadata for the NOFire AI dashboard (NOFireAI/engineering#1983).
       # The dashboard reads edge/latest.json at https://releases.nofire.ai to pick
       # the chart version its install commands use, so writing it is what ships
-      # a chart release to customers. tests/dashboard_install_test.yaml is the
-      # gate for that.
+      # a chart release to customers. tests/dashboard_install_test.yaml and the
+      # dashboard-reuse-from-0.9.0 render case, run by ci.yaml, are the gate.
       #
       # These steps run on every run, not only when a release was created, and
       # each write is idempotent: a re-run changes nothing, and a manual run
       # publishes a release that predates them. They are skipped until the
       # RELEASE_METADATA_ROLE_ARN repository variable is set.
+      - name: Install yq
+        if: vars.RELEASE_METADATA_ROLE_ARN != ''
+        run: |
+          sudo wget -qO /usr/local/bin/yq https://github.com/mikefarah/yq/releases/download/v4.44.3/yq_linux_amd64
+          sudo chmod +x /usr/local/bin/yq
+
       - name: Wait for the Helm repo index
         if: vars.RELEASE_METADATA_ROLE_ARN != ''
         env:
@@ -151,6 +157,10 @@ jobs:
           BUCKET: releases.nofire.ai
         run: |
           set -euo pipefail
+          # Scratch files live outside the checkout, so nothing here can end up in a
+          # chart package.
+          work="$RUNNER_TEMP/release-metadata"
+          mkdir -p "$work"
           app_version="$(yq -r '.appVersion' Chart.yaml)"
           tag="$(yq -r '.image.tag // ""' values.yaml)"
           tag="${tag:-$app_version}"
@@ -171,42 +181,64 @@ jobs:
               edge: {version: $appVersion, images: {edge: $edge, edgeProxy: $edgeProxy}},
               releasedAt: $release.publishedAt,
               releaseUrl: $release.url
-            }' > metadata.json
-          cat metadata.json
+            }' > "$work/metadata.json"
+          cat "$work/metadata.json"
 
           # The versioned file is immutable: written once, never replaced.
           if aws s3api put-object --bucket "$BUCKET" --key "edge/$VERSION.json" \
-            --body metadata.json --content-type application/json \
+            --body "$work/metadata.json" --content-type application/json \
             --cache-control 'public, max-age=31536000, immutable' \
-            --if-none-match '*' >/dev/null 2>err.txt; then
+            --if-none-match '*' >/dev/null 2>"$work/err.txt"; then
             echo "wrote edge/$VERSION.json"
-          elif grep -q PreconditionFailed err.txt; then
+          elif grep -q PreconditionFailed "$work/err.txt"; then
             echo "edge/$VERSION.json already exists"
           else
-            cat err.txt
+            cat "$work/err.txt"
             exit 1
           fi
 
-          # latest.json only moves forward, and never to a pre-release. Read it
-          # from S3 rather than through Cloudflare, so a cached copy cannot hide
-          # a newer version. A missing key is a 403: the bucket allows no listing.
+          # latest.json only moves forward, and never to a pre-release.
           case "$VERSION" in *-*)
             echo "$VERSION is a pre-release, leaving latest.json alone"
             exit 0
           esac
-          code="$(curl -sS -o latest.json -w '%{http_code}' \
-            "https://s3.us-east-1.amazonaws.com/$BUCKET/edge/latest.json")"
-          case "$code" in
-            200) current="$(jq -r '.chart.version' latest.json)" ;;
-            403|404) current="" ;;
-            *) echo "::error::reading latest.json returned HTTP $code"; exit 1 ;;
-          esac
-          if [ -n "$current" ] && \
-            [ "$(printf '%s\n%s\n' "$current" "$VERSION" | sort -V | tail -1)" = "$current" ]; then
-            echo "latest.json holds $current, not replacing it with $VERSION"
-            exit 0
-          fi
-          aws s3api put-object --bucket "$BUCKET" --key edge/latest.json \
-            --body metadata.json --content-type application/json \
-            --cache-control 'public, max-age=300' >/dev/null
-          echo "latest.json now holds $VERSION (was ${current:-nothing})"
+
+          # Read it with the role, from S3 rather than through Cloudflare, so a cached
+          # copy cannot hide a newer version. The role can list the bucket, so a missing
+          # key is NoSuchKey; any other error, AccessDenied included, fails the step
+          # instead of passing for "no latest.json yet". The write only lands if
+          # latest.json still holds what was read (its ETag, or nothing), so of two
+          # releases racing, the one that loses reads again and compares again.
+          for _ in 1 2 3 4 5; do
+            if aws s3api get-object --bucket "$BUCKET" --key edge/latest.json \
+              "$work/latest.json" >"$work/get.json" 2>"$work/err.txt"; then
+              current="$(jq -r '.chart.version // ""' "$work/latest.json")"
+              condition=(--if-match "$(jq -r '.ETag' "$work/get.json")")
+            elif grep -q NoSuchKey "$work/err.txt"; then
+              current=""
+              condition=(--if-none-match '*')
+            else
+              cat "$work/err.txt"
+              exit 1
+            fi
+            if [ -n "$current" ] && \
+              [ "$(printf '%s\n%s\n' "$current" "$VERSION" | sort -V | tail -1)" = "$current" ]; then
+              echo "latest.json holds $current, not replacing it with $VERSION"
+              exit 0
+            fi
+            if aws s3api put-object --bucket "$BUCKET" --key edge/latest.json \
+              --body "$work/metadata.json" --content-type application/json \
+              --cache-control 'public, max-age=300' "${condition[@]}" \
+              >/dev/null 2>"$work/err.txt"; then
+              echo "latest.json now holds $VERSION (was ${current:-nothing})"
+              exit 0
+            fi
+            if ! grep -Eq 'PreconditionFailed|ConditionalRequestConflict' "$work/err.txt"; then
+              cat "$work/err.txt"
+              exit 1
+            fi
+            echo "latest.json changed while this run read it, reading it again"
+            sleep 3
+          done
+          echo "::error::latest.json kept changing, gave up after 5 attempts"
+          exit 1
