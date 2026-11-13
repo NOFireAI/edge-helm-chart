@@ -161,19 +161,29 @@ jobs:
           # chart package.
           work="$RUNNER_TEMP/release-metadata"
           mkdir -p "$work"
-          app_version="$(yq -r '.appVersion' Chart.yaml)"
+          app_version="$(yq -r '.appVersion // ""' Chart.yaml)"
           tag="$(yq -r '.image.tag // ""' values.yaml)"
           tag="${tag:-$app_version}"
           proxy_tag="$(yq -r '.edgeProxy.image.tag // ""' values.yaml)"
           proxy_tag="${proxy_tag:-$tag}"
+          edge_repo="$(yq -r '.image.repository // ""' values.yaml)"
+          proxy_repo="$(yq -r '.edgeProxy.image.repository // ""' values.yaml)"
+          # edge/<version>.json is written once and never replaced, so a missing
+          # field fails here rather than shipping as an empty or "null" image.
+          for field in "$app_version" "$tag" "$edge_repo" "$proxy_repo"; do
+            if [ -z "$field" ]; then
+              echo "::error::Chart.yaml appVersion or an image repository is missing"
+              exit 1
+            fi
+          done
           release="$(gh release view "$NAME-$VERSION" --json publishedAt,url)"
 
           jq -n \
             --arg name "$NAME" \
             --arg version "$VERSION" \
             --arg appVersion "$app_version" \
-            --arg edge "$(yq -r '.image.repository' values.yaml):$tag" \
-            --arg edgeProxy "$(yq -r '.edgeProxy.image.repository' values.yaml):$proxy_tag" \
+            --arg edge "$edge_repo:$tag" \
+            --arg edgeProxy "$proxy_repo:$proxy_tag" \
             --argjson release "$release" \
             '{
               schema: 1,
