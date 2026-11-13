@@ -13,8 +13,6 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
-      # OIDC token for the release metadata role (NOFireAI/terraform#295).
-      id-token: write
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -106,149 +104,33 @@ jobs:
           git commit -m "chore(release): ${{ steps.chart.outputs.name }}-${{ steps.chart.outputs.version }}"
           git push
 
-      # Release metadata for the NOFire AI dashboard (NOFireAI/engineering#1983).
-      # The dashboard reads edge/latest.json at https://releases.nofire.ai to pick
-      # the chart version its install commands use, so writing it is what ships
-      # a chart release to customers. tests/dashboard_install_test.yaml and the
-      # dashboard-reuse-from-0.9.0 render case, run by ci.yaml, are the gate.
-      #
-      # These steps run on every run, not only when a release was created, and
-      # each write is idempotent: a re-run changes nothing, and a manual run
-      # publishes a release that predates them. They are skipped until the
-      # RELEASE_METADATA_ROLE_ARN repository variable is set.
-      - name: Install yq
-        if: vars.RELEASE_METADATA_ROLE_ARN != ''
-        run: |
-          sudo wget -qO /usr/local/bin/yq https://github.com/mikefarah/yq/releases/download/v4.44.3/yq_linux_amd64
-          sudo chmod +x /usr/local/bin/yq
-
-      - name: Wait for the Helm repo index
-        if: vars.RELEASE_METADATA_ROLE_ARN != ''
-        env:
-          VERSION: ${{ steps.chart.outputs.version }}
-          NAME: ${{ steps.chart.outputs.name }}
-        run: |
-          # GitHub Pages deploys after the push. latest.json must not name a
-          # version `helm repo update` cannot find yet.
-          for _ in $(seq 1 40); do
-            if curl -sSfL https://nofireai.github.io/edge-helm-chart/index.yaml \
-              | yq -e ".entries[\"$NAME\"][] | select(.version == \"$VERSION\")" >/dev/null 2>&1; then
-              echo "$NAME $VERSION is in the index"
-              exit 0
-            fi
-            sleep 15
-          done
-          echo "::error::$NAME $VERSION did not appear in index.yaml within 10 minutes"
-          exit 1
+  # Release metadata for the NOFire AI dashboard (NOFireAI/engineering#1983): it
+  # reads edge/latest.json at https://releases.nofire.ai to pick the chart
+  # version customers install, and tests/dashboard_install_test.yaml is the gate.
+  # A job of its own, so the AWS role's OIDC token never shares a job with the
+  # release's write token. Runs on every run (each write is idempotent); skipped
+  # until the RELEASE_METADATA_ROLE_ARN repository variable is set. aws, gh, helm
+  # and python3 come with the runner image.
+  publish-metadata:
+    needs: release
+    if: vars.RELEASE_METADATA_ROLE_ARN != ''
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
 
       - name: Configure AWS credentials
-        if: vars.RELEASE_METADATA_ROLE_ARN != ''
-        uses: aws-actions/configure-aws-credentials@v4
+        uses: aws-actions/configure-aws-credentials@7474bc4690e29a8392af63c5b98e7449536d5c3a # v4.3.1
         with:
           role-to-assume: ${{ vars.RELEASE_METADATA_ROLE_ARN }}
           aws-region: us-east-1
 
       - name: Publish release metadata
-        if: vars.RELEASE_METADATA_ROLE_ARN != ''
         env:
           GH_TOKEN: ${{ github.token }}
-          NAME: ${{ steps.chart.outputs.name }}
-          VERSION: ${{ steps.chart.outputs.version }}
-          BUCKET: releases.nofire.ai
-        run: |
-          set -euo pipefail
-          # Scratch files live outside the checkout, so nothing here can end up in a
-          # chart package.
-          work="$RUNNER_TEMP/release-metadata"
-          mkdir -p "$work"
-          app_version="$(yq -r '.appVersion // ""' Chart.yaml)"
-          tag="$(yq -r '.image.tag // ""' values.yaml)"
-          tag="${tag:-$app_version}"
-          proxy_tag="$(yq -r '.edgeProxy.image.tag // ""' values.yaml)"
-          proxy_tag="${proxy_tag:-$tag}"
-          edge_repo="$(yq -r '.image.repository // ""' values.yaml)"
-          proxy_repo="$(yq -r '.edgeProxy.image.repository // ""' values.yaml)"
-          # edge/<version>.json is written once and never replaced, so a missing
-          # field fails here rather than shipping as an empty or "null" image.
-          for field in "$app_version" "$tag" "$edge_repo" "$proxy_repo"; do
-            if [ -z "$field" ]; then
-              echo "::error::Chart.yaml appVersion or an image repository is missing"
-              exit 1
-            fi
-          done
-          release="$(gh release view "$NAME-$VERSION" --json publishedAt,url)"
-
-          jq -n \
-            --arg name "$NAME" \
-            --arg version "$VERSION" \
-            --arg appVersion "$app_version" \
-            --arg edge "$edge_repo:$tag" \
-            --arg edgeProxy "$proxy_repo:$proxy_tag" \
-            --argjson release "$release" \
-            '{
-              schema: 1,
-              chart: {name: $name, version: $version, repo: "https://nofireai.github.io/edge-helm-chart"},
-              edge: {version: $appVersion, images: {edge: $edge, edgeProxy: $edgeProxy}},
-              releasedAt: $release.publishedAt,
-              releaseUrl: $release.url
-            }' > "$work/metadata.json"
-          cat "$work/metadata.json"
-
-          # The versioned file is immutable: written once, never replaced.
-          if aws s3api put-object --bucket "$BUCKET" --key "edge/$VERSION.json" \
-            --body "$work/metadata.json" --content-type application/json \
-            --cache-control 'public, max-age=31536000, immutable' \
-            --if-none-match '*' >/dev/null 2>"$work/err.txt"; then
-            echo "wrote edge/$VERSION.json"
-          elif grep -Eq 'PreconditionFailed|ConditionalRequestConflict' "$work/err.txt"; then
-            echo "edge/$VERSION.json already exists, or another run is writing it"
-          else
-            cat "$work/err.txt"
-            exit 1
-          fi
-
-          # latest.json only moves forward, and never to a pre-release.
-          case "$VERSION" in *-*)
-            echo "$VERSION is a pre-release, leaving latest.json alone"
-            exit 0
-          esac
-
-          # Read it with the role, from S3 rather than through Cloudflare, so a cached
-          # copy cannot hide a newer version. The role can list the bucket, so a missing
-          # key is NoSuchKey; any other error, AccessDenied included, fails the step
-          # instead of passing for "no latest.json yet". The write only lands if
-          # latest.json still holds what was read (its ETag, or nothing), so of two
-          # releases racing, the one that loses reads again and compares again.
-          for _ in 1 2 3 4 5; do
-            if aws s3api get-object --bucket "$BUCKET" --key edge/latest.json \
-              "$work/latest.json" >"$work/get.json" 2>"$work/err.txt"; then
-              current="$(jq -r '.chart.version // ""' "$work/latest.json")"
-              condition=(--if-match "$(jq -r '.ETag' "$work/get.json")")
-            elif grep -q NoSuchKey "$work/err.txt"; then
-              current=""
-              condition=(--if-none-match '*')
-            else
-              cat "$work/err.txt"
-              exit 1
-            fi
-            if [ -n "$current" ] && \
-              [ "$(printf '%s\n%s\n' "$current" "$VERSION" | sort -V | tail -1)" = "$current" ]; then
-              echo "latest.json holds $current, not replacing it with $VERSION"
-              exit 0
-            fi
-            if aws s3api put-object --bucket "$BUCKET" --key edge/latest.json \
-              --body "$work/metadata.json" --content-type application/json \
-              --cache-control 'public, max-age=300' "${condition[@]}" \
-              >/dev/null 2>"$work/err.txt"; then
-              echo "latest.json now holds $VERSION (was ${current:-nothing})"
-              exit 0
-            fi
-            if ! grep -Eq 'PreconditionFailed|ConditionalRequestConflict' "$work/err.txt"; then
-              cat "$work/err.txt"
-              exit 1
-            fi
-            echo "latest.json changed while this run read it, reading it again"
-            sleep 3
-          done
-          echo "::error::latest.json kept changing, gave up after 5 attempts"
-          exit 1
+        run: python3 -u .github/scripts/publish_release_metadata.py
