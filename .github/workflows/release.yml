@@ -190,8 +190,8 @@ jobs:
             --cache-control 'public, max-age=31536000, immutable' \
             --if-none-match '*' >/dev/null 2>"$work/err.txt"; then
             echo "wrote edge/$VERSION.json"
-          elif grep -q PreconditionFailed "$work/err.txt"; then
-            echo "edge/$VERSION.json already exists"
+          elif grep -Eq 'PreconditionFailed|ConditionalRequestConflict' "$work/err.txt"; then
+            echo "edge/$VERSION.json already exists, or another run is writing it"
           else
             cat "$work/err.txt"
             exit 1
