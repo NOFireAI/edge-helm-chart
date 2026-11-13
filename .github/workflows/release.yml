@@ -103,3 +103,40 @@ jobs:
           git add .
           git commit -m "chore(release): ${{ steps.chart.outputs.name }}-${{ steps.chart.outputs.version }}"
           git push
+
+  # Release metadata for the NOFire AI dashboard (NOFireAI/engineering#1983): it
+  # reads edge/latest.json at https://releases.nofire.ai to pick the chart
+  # version customers install, and tests/dashboard_install_test.yaml is the gate.
+  # A job of its own, so the AWS role's OIDC token never shares a job with the
+  # release's write token. Runs on every run (each write is idempotent); skipped
+  # until the RELEASE_METADATA_ROLE_ARN repository variable is set. aws, gh and
+  # helm come with the runner image; setup-go uses the Go it already caches.
+  publish-metadata:
+    needs: release
+    if: vars.RELEASE_METADATA_ROLE_ARN != ''
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Set up Go
+        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version: '1.26'
+          cache: false
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@7474bc4690e29a8392af63c5b98e7449536d5c3a # v4.3.1
+        with:
+          role-to-assume: ${{ vars.RELEASE_METADATA_ROLE_ARN }}
+          aws-region: us-east-1
+
+      - name: Publish release metadata
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: go run .github/scripts/publish-release-metadata/main.go
