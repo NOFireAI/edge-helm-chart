@@ -4,6 +4,10 @@
 # templates against exactly this, which is what the dashboard's step 5 and
 # disconnect commands do once they follow the published chart version
 # (NOFireAI/engineering#1983).
+#
+# expect.jq checks config.json only. The edgeProxy and onPremConnections values
+# below prove the edge-proxy templates still render against them (a render error
+# fails this case); tests/dashboard_install_test.yaml asserts what they render.
 # Default values for nofire-edge.
 # This is a YAML-formatted file.
 # Declare variables to be passed into your templates.
