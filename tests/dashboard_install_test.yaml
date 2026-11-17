@@ -1,0 +1,103 @@
+# The values the NOFire AI dashboard's install, sources and disconnect commands
+# set (app/dashboard/activation/installCommand.ts in NOFireAI/dashboard).
+#
+# Once a chart release publishes edge/latest.json, the dashboard offers that
+# version to customers with no review step of its own, so this suite is the
+# gate. Helm ignores values keys a chart does not read, so a renamed or dropped
+# key would still render cleanly: each case asserts the value comes out the
+# other side, not only that the render succeeds.
+#
+# Change these together with the dashboard's command builders.
+suite: dashboard install command
+templates:
+  - templates/configmap.yaml
+  - templates/deployment.yaml
+  - templates/edge-proxy-configmap.yaml
+  - templates/edge-proxy-deployment.yaml
+tests:
+  - it: install puts the token, cluster name and netobs switch in config.json
+    template: templates/configmap.yaml
+    set:
+      config.publisher.apiKey: dash-test-token
+      config.kube.clusterName: dash-test-cluster
+      config.netobs.enabled: true
+    asserts:
+      - matchRegex:
+          path: data["config.json"]
+          pattern: '"apiKey": "dash-test-token"'
+      - matchRegex:
+          path: data["config.json"]
+          pattern: '"clusterName": "dash-test-cluster"'
+      - matchRegex:
+          path: data["config.json"]
+          pattern: '"netobs": \{\s*"enabled": true'
+
+  - it: a non-canonical origin sets the publisher graph URL
+    template: templates/configmap.yaml
+    set:
+      config.publisher.graph.url: https://dash-test.example/api/edge
+    asserts:
+      - matchRegex:
+          path: data["config.json"]
+          pattern: '"url": "https://dash-test.example/api/edge"'
+
+  - it: the dnstap verify command can select the edge pod by name label
+    template: templates/deployment.yaml
+    asserts:
+      - equal:
+          path: spec.template.metadata.labels["app.kubernetes.io/name"]
+          value: nofire-edge
+
+  - it: sources deploy edge-proxy with each connection
+    template: templates/edge-proxy-configmap.yaml
+    set:
+      config.publisher.apiKey: dash-test-token
+      config.kube.clusterName: dash-test-cluster
+      edgeProxy.enabled: true
+      onPremConnections:
+        prometheus:
+          type: prometheus
+          url: http://prometheus.monitoring:9090
+          enabled: true
+        elasticsearch:
+          type: elasticsearch
+          url: http://es.logging:9200
+          index: logs-*
+          enabled: true
+    asserts:
+      - matchRegex:
+          path: data["config.json"]
+          pattern: '"clusterName": "dash-test-cluster"'
+      - matchRegex:
+          path: data["config.json"]
+          pattern: '"prometheus": \{\s*"type": "prometheus",\s*"enabled": true'
+      - matchRegex:
+          path: data["config.json"]
+          pattern: '"url": "http://prometheus.monitoring:9090"'
+      - matchRegex:
+          path: data["config.json"]
+          pattern: '"index": "logs-\*"'
+
+  - it: edgeProxy.enabled renders the edge-proxy deployment
+    template: templates/edge-proxy-deployment.yaml
+    set:
+      edgeProxy.enabled: true
+    asserts:
+      - hasDocuments:
+          count: 1
+      - isKind:
+          of: Deployment
+
+  - it: disconnect turns one connection off and keeps it listed
+    template: templates/edge-proxy-configmap.yaml
+    set:
+      edgeProxy.enabled: true
+      onPremConnections:
+        prometheus:
+          type: prometheus
+          url: http://prometheus.monitoring:9090
+          enabled: false
+    asserts:
+      - matchRegex:
+          path: data["config.json"]
+          pattern: '"prometheus": \{\s*"type": "prometheus",\s*"enabled": false'
