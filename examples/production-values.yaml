@@ -2,7 +2,7 @@
 image:
   #repository: localhost:50001/nofire-edge
   repository: nofireai/edge
-  tag: "v3.10.1"
+  tag: "v3.10.2"
   pullPolicy: Always
 
 imagePullSecrets: []
@@ -10,10 +10,12 @@ imagePullSecrets: []
 # Scale for production
 replicaCount: 1
 
+progressDeadlineSeconds: 600
+
 strategy:
   type: RollingUpdate
   rollingUpdate:
-    maxUnavailable: 1
+    maxUnavailable: 0
     maxSurge: 1
 
 serviceAccount:

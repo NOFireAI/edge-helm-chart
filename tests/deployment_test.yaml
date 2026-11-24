@@ -41,3 +41,43 @@ tests:
       - notContains:
           path: spec.template.spec.containers[0].env
           content: {name: GODEBUG, value: multipathtcp=0}
+  - it: defaults edge Deployment to zero-downtime RollingUpdate and explicit progressDeadlineSeconds
+    template: templates/deployment.yaml
+    asserts:
+      - equal:
+          path: spec.replicas
+          value: 1
+      - equal:
+          path: spec.progressDeadlineSeconds
+          value: 600
+      - equal:
+          path: spec.strategy
+          value:
+            type: RollingUpdate
+            rollingUpdate:
+              maxUnavailable: 0
+              maxSurge: 1
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value: nofireai/edge:v3.10.2
+  - it: defaults edge-proxy Deployment to zero-downtime RollingUpdate and explicit progressDeadlineSeconds
+    template: templates/edge-proxy-deployment.yaml
+    set:
+      edgeProxy.enabled: true
+    asserts:
+      - equal:
+          path: spec.replicas
+          value: 1
+      - equal:
+          path: spec.progressDeadlineSeconds
+          value: 600
+      - equal:
+          path: spec.strategy
+          value:
+            type: RollingUpdate
+            rollingUpdate:
+              maxUnavailable: 0
+              maxSurge: 1
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value: nofireai/edge-proxy:v3.10.2

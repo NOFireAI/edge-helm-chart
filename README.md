@@ -32,6 +32,10 @@ helm install nofire-edge nofire/nofire-edge \
 | `config.publisher.graph.url` | NOFire API endpoint | `https://my.nofire.ai/api/edge` | No |
 | `service.clusterIP` | Static ClusterIP (recommended) | `""` | No |
 | `monitoring.serviceMonitor.enabled` | Enable Prometheus ServiceMonitor | `false` | No |
+| `strategy` | Deployment rollout strategy (`RollingUpdate`, `maxSurge: 1`, `maxUnavailable: 0` keeps the old pod serving until the new pod is Ready) | `RollingUpdate (1/0)` | No |
+| `progressDeadlineSeconds` | Rollout stall deadline in seconds before `Progressing=False` | `600` | No |
+| `edgeProxy.strategy` | Rollout strategy for `edge-proxy` when `edgeProxy.enabled` is true (`maxSurge: 1`, `maxUnavailable: 0`) | `RollingUpdate (1/0)` | No |
+| `edgeProxy.progressDeadlineSeconds` | Rollout stall deadline in seconds for `edge-proxy` | `600` | No |
 | `godebug` | `GODEBUG` for the edge and edge-proxy containers. The default turns off MPTCP listeners (CVE-2026-98432). `""` omits it; a `GODEBUG` entry in `env` overrides it on edge. | `multipathtcp=0` | No |
 
 ## Edge Proxy (On-Prem Connections)
