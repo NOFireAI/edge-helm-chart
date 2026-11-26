@@ -8,6 +8,13 @@ metadata:
     {{- include "nofire-edge.edgeProxy.labels" . | nindent 4 }}
 spec:
   replicas: {{ .Values.edgeProxy.replicaCount | default 1 }}
+  {{- with .Values.edgeProxy.progressDeadlineSeconds }}
+  progressDeadlineSeconds: {{ . }}
+  {{- end }}
+  {{- with .Values.edgeProxy.strategy }}
+  strategy:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
   selector:
     matchLabels:
       {{- include "nofire-edge.edgeProxy.selectorLabels" . | nindent 6 }}
